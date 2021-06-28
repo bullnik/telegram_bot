@@ -1,10 +1,17 @@
+from datetime import datetime
 from enum import Enum
 
 
+class TransportType(Enum):
+    PLANE = "PLANE",
+    TRAIN = "TRAIN",
+    BUS = "BUS"
+
+
 class Road:
-    def __init__(self, transport_type,
-                 departure_town, arrival_town,
-                 departure_time, arrival_time):
+    def __init__(self, transport_type: TransportType,
+                 departure_town: str, arrival_town: str,
+                 departure_time: datetime, arrival_time: datetime):
         self.__departure_town = departure_town
         self.__arrival_town = arrival_town
         self.__transport_type = transport_type
@@ -12,27 +19,21 @@ class Road:
         self.__arrival_time = arrival_time
 
     @property
-    def transport_type(self):
+    def transport_type(self) -> TransportType:
         return self.__transport_type
 
     @property
-    def departure_town(self):
+    def departure_town(self) -> str:
         return self.__departure_town
 
     @property
-    def arrival_town(self):
+    def arrival_town(self) -> str:
         return self.__arrival_town
 
     @property
-    def departure_time(self):
+    def departure_time(self) -> datetime:
         return self.__departure_time
 
     @property
-    def arrival_time(self):
+    def arrival_time(self) -> datetime:
         return self.arrival_time
-
-
-class TransportType(Enum):
-    PLANE = "PLANE",
-    TRAIN = "TRAIN",
-    BUS = "BUS"
