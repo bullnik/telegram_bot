@@ -5,7 +5,8 @@ from road import TransportType, Road
 
 class RoadParser:
     @abstractmethod
-    def parse_roads(self, transport_types: List[TransportType]) -> List[Road]:
+    def parse_roads(self, transport_types: List[TransportType],
+                    departure_town: str, arrival_town: str) -> List[Road]:
         raise NotImplemented()
 
     @abstractmethod
