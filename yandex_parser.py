@@ -29,8 +29,8 @@ def get_avia_tickets():
     #)
 
     # Хреновое название переменной, переделывай. Кароч это из выпадающего списка первый элемент
-    departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
     time.sleep(1) # костыль, выпадающий список обновляется не моментально
+    departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
     departure_dropbox_element.click() # там есть выпадающий список. Надо обязательно выбирать город из списка, иначе неизвестный город и иди накуй
 
     arrival = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']") # Это уже ищется поле с городом Куда (у прошлого элемента класс поменялся, поэтому это пашет)
@@ -40,11 +40,34 @@ def get_avia_tickets():
     arrival_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']") # таже хрень с выпадающим списком
     arrival_element.click()
 
-    print(departure.get_attribute('value')) # Проверяю что всё правильно подставилось в поля
-    print(arrival.get_attribute('value')) #
+    print("Откуда: " + departure.get_attribute('value')) # Проверяю что всё правильно подставилось в поля
+    print("Куда: " + arrival.get_attribute('value')) #
 
-    # Дальше тут надо ещё выбор даты прикручивать сюка((((
-
+    # Названия переменных то ещё дерьмо, но надеюсь заставлю себя нормальные придумать
+    # тут значит берутся все блоки месяцов (1-31 дни)
+    month_periods = driver.find_elements_by_xpath("//div[@class='_1Gwsc']")
+    month_name = None
+    print(range(0, len(month_periods)))
+    for i in range(0, len(month_periods)): # пробегаем по всем блокам месяцов
+        month_name = month_periods[i].find_element_by_xpath("//div[@class='_1qrB_ _1bVZZ']")
+        print("Проверяется месяц:" + month_name.text)
+        if month_name.text == "Октябрь": # ищем блок с нужным месяцем (будет подставляться название месяца)
+            print("Месяц правильный. Чотка")
+            month_period = month_name.find_element_by_xpath('..') # Сохраняем родителя дива с правильным месяцем
+            days_blocks = month_period.find_elements_by_xpath("//div[@class='_3AlmX _38-9Y']") # в блоке одного месяца ищем доступные дни
+            day = None
+            for i in range(0, len(days_blocks)): # пробегаем по всем доступным дням
+                day = days_blocks[i].find_elements_by_xpath(".//*") # получаем всех потомков
+                print("Проверяется день:" + day[0].text)
+                if day[0].text == '15': # нужен первый блок <span> (будет подставляться день)
+                    break
+            print("День правильный. Чотка")
+            day[0].click() # Нажимаем по дню чтоб выбрать
+            break
+    # Месяца криво работают почему-то, но день выбирает правильно
+    # надо пролистывать список с месяцами чтоб всё вытаскивало
+    # и надо кнопку поиска нажимать
+    # ну и потом придётся парсить сами билеты
 
 class YandexParser(RoadParser, ABC):
     def parse_roads(self, transport_types: List[TransportType],
