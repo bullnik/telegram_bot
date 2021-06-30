@@ -4,6 +4,13 @@ from request import UserRequest
 from road import TransportType, Road
 
 
+def init_database():
+
+    # открыть базу и сделать там бим-бим бам-бам, чтобы остальные методы работали
+
+    raise NotImplemented
+
+
 def get_roads(departure_town: str, arrival_town: str,
               transport_types: List[TransportType],
               min_departure_time: datetime) -> List[Road]:
