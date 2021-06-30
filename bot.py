@@ -18,9 +18,7 @@ def write_start_message(message):
 
 @bot.message_handler(commands=['test'])
 def command_test(message):
-
-
-    bot.reply_to(message, "fdsafdasfdsa")
+    bot.reply_to(message, "text")
 
 
 @bot.message_handler(commands=['start', 'help'])
