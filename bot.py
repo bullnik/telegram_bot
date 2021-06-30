@@ -16,14 +16,16 @@ def write_start_message(message):
                  "Или напишите \"Я бычара\"")
 
 
+@bot.message_handler(commands=['test'])
+def command_test(message):
+
+
+    bot.reply_to(message, "fdsafdasfdsa")
+
+
 @bot.message_handler(commands=['start', 'help'])
 def command_help(message):
     write_start_message(message)
-
-
-@bot.message_handler(commands=['test'])
-def command_test(message):
-    bot.reply_to(message, message)
 
 
 @bot.message_handler(commands=['name'])
