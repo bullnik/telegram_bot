@@ -12,8 +12,8 @@ class PlaceToVisit:
 
     @property
     def min_stay_days(self):
-        return self.min_stay_days
+        return self.__min_stay_days
 
     @property
     def max_stay_days(self):
-        return self.max_stay_days
+        return self.__max_stay_days

@@ -65,7 +65,12 @@ def recursive_traversal_places_and_adding_to_routes_list(possible_places_lists: 
 
                 recursive_traversal_places_and_adding_to_routes_list(possible_places_lists, transport_types,
                                                                      with_baggage, routes, route_copy,
-                                                                     current_datetime + timedelta(days=stay_days_count))
+                                                                     current_datetime + timedelta(days=stay_days_count)
+                                                                     + get_travel_time(road))
+
+
+def get_travel_time(road: Road) -> timedelta:
+    return road.arrival_time - road.departure_time
 
 
 def get_road(departure_town: str, arrival_town: str,

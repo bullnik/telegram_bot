@@ -36,14 +36,14 @@ def insert_request(request: UserRequest):
     raise NotImplemented
 
 
-def get_requests(user_id: str, requests_count: int) -> List[UserRequest]:
+def get_requests(user_id: int, requests_count: int) -> List[UserRequest]:
 
     # возвращает n последних запросов пользователя из базы
 
     raise NotImplemented
 
 
-def get_favorites_requests(user_id: str, requests_count) -> List[UserRequest]:
+def get_favorites_requests(user_id: int, requests_count) -> List[UserRequest]:
 
     # возвращает n последних избранных запросов
 

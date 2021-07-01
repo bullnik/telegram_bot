@@ -4,7 +4,7 @@ from road import TransportType
 
 
 class UserRequest:
-    def __init__(self, user_id: str,
+    def __init__(self, user_id: int,
                  possible_places_lists: List[List[PlaceToVisit]],
                  transport_types: List[TransportType],
                  with_baggage: bool):
@@ -14,7 +14,7 @@ class UserRequest:
         self.__with_baggage = with_baggage
 
     @property
-    def user_id(self) -> str:
+    def user_id(self) -> int:
         return self.__user_id
 
     @property

@@ -69,6 +69,7 @@ def get_avia_tickets():
     # и надо кнопку поиска нажимать
     # ну и потом придётся парсить сами билеты
 
+
 class YandexParser(RoadParser, ABC):
     def __init__(self):
         super().__init__()
