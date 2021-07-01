@@ -8,7 +8,7 @@ import selenium.common.exceptions
 from selenium.webdriver.common.by import By
 
 # Путь к драйверу хрома чтоб работало, у каждого свой путь... (ауф)
-CHROME_EXE_PATH = "C:\\Users\\admin\\Desktop\\chromedriver_win32\\chromedriver.exe"
+CHROME_EXE_PATH = "chromedriver.exe"
 
 MAX_COUNT_TICKETS_FOR_PARSING = 80
 
