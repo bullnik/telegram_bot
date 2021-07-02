@@ -7,7 +7,6 @@ from selenium import webdriver
 import selenium.common.exceptions
 from selenium.webdriver.common.by import By
 
-# Путь к драйверу хрома чтоб работало, у каждого свой путь... (ауф)
 CHROME_EXE_PATH = "chromedriver.exe"
 
 MAX_COUNT_TICKETS_FOR_PARSING = 80
@@ -211,7 +210,7 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                     link=link
                     )
         roads.append(road)
-        driver.quit()
+    driver.quit()
     return roads
 
 
@@ -449,10 +448,10 @@ class YandexParser(RoadParser, ABC):
 
     def can_parse_transport(self, transport_type: TransportType) -> bool:
         if transport_type == TransportType.PLANE:
-            return False
+            return True
         elif transport_type == TransportType.TRAIN:
-            return False
+            return True
         elif transport_type == TransportType.BUS:
-            return False
+            return True
         else:
             raise NotImplemented()
