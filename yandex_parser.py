@@ -6,10 +6,13 @@ from road import *
 from selenium import webdriver
 import selenium.common.exceptions
 from selenium.webdriver.common.by import By
+import settings
+
+settings.__write_settings(settings.__Settings(10, 20))
 
 CHROME_EXE_PATH = "chromedriver.exe"
 
-MAX_COUNT_TICKETS_FOR_PARSING = 80
+MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
 
 def get_month_name(month: int) -> str:
     month_names = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -121,7 +124,7 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     if not search_result:
         return []
 
-    time.sleep(15)
+    time.sleep(8)
     direct_button = driver.find_element_by_xpath(
         "//button[@class='Button2 YTButton YTButton_theme_secondary YTButton_size_m-inset Button2_width_max Button2_view_default YTButton_kind_check _32KGW']")
     try:
@@ -224,7 +227,7 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     if not search_result:
         return []
 
-    time.sleep(15)
+    time.sleep(3)
 
     # сколько билетов парсить (берём из админ панели)
     # для тестов пока так сделал
@@ -341,7 +344,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     if not search_result:
         return []
 
-    time.sleep(15)
+    time.sleep(3)
     # сколько билетов парсить (берём из админ панели)
     # для тестов пока так сделал
     max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
