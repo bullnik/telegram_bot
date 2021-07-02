@@ -8,10 +8,7 @@ import selenium.common.exceptions
 from selenium.webdriver.common.by import By
 import settings
 
-settings.__write_settings(settings.__Settings(10, 20))
-
 CHROME_EXE_PATH = "chromedriver.exe"
-
 MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
 
 
@@ -24,6 +21,7 @@ def get_month_name(month: int) -> str:
 def data_entry_for_search(driver: webdriver,
                           departure_town: str, arrival_town: str,
                           min_departure_time: datetime, transport_type: str) -> bool:
+    driver.set_window_size(1500, 1000)
     driver.get(str.format("https://travel.yandex.ru/{0}/", transport_type))  # какой сайт запускает
 
     clear_button = driver.find_element_by_class_name('_1-YdI')  # это кнопка чтоб удалить содержимое текстового поля
@@ -40,7 +38,7 @@ def data_entry_for_search(driver: webdriver,
     try_count = 0
     while not is_dropbox_update:
         if try_count == 10:
-            print("Прямых маршрутов не существует")
+            print("Неверное название города Откуда")
             driver.quit()
             return False
         try:
@@ -62,7 +60,7 @@ def data_entry_for_search(driver: webdriver,
     try_count = 0
     while not is_dropbox_update:
         if try_count == 10:
-            print("Прямых маршрутов не существует")
+            print("Прямых маршрутов не существует или неверное название города Куда")
             driver.quit()
             return False
         try:
@@ -164,7 +162,6 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
 
     roads = []
     for j in range(0, max_for_parsing):
-        # ticket = tickets[0]
         transport_type = TransportType.PLANE
         ticket_departure_time = tickets[j].find_element_by_xpath(
             ".//span[@class='bX2B3 _3c05m JIKEi _2uao0']").text.split(':')
@@ -176,8 +173,9 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                                     ticket_departure_time[1],
                                     '00')
         departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
-        ticket_arrival_time = tickets[j].find_element_by_xpath(".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
 
+        ticket_arrival_time = tickets[j].find_element_by_xpath(
+            ".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
         day = min_departure_time.day
         # часы приезда < часы выезда => прибыл в следующий день
         if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
