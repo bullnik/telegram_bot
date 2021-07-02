@@ -14,6 +14,7 @@ CHROME_EXE_PATH = "chromedriver.exe"
 
 MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
 
+
 def get_month_name(month: int) -> str:
     month_names = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
                    'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь']
@@ -190,18 +191,23 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                 cost += i
         cost = int(cost)
         link = tickets[j].find_element_by_xpath(".//a[@class='_25xbA']").get_attribute('href')
-        baggage_cost = '0'
+
+        baggage_cost = 0
         check_box = tickets[j].find_elements_by_xpath(".//input[@class='Checkbox-Control']")[1].get_attribute(
             'aria-checked')
         if check_box == 'false':
-            baggage_cost = tickets[j].find_element_by_xpath(".//span[@class='_3XOAe']").text
+            baggage_cost = ''
+            for i in str(tickets[j].find_element_by_xpath(".//span[@class='_3XOAe']").text):
+                if i.isdigit():
+                    baggage_cost += i
+            baggage_cost = int(baggage_cost)
         print('transport_type: ' + 'PLANE')
         print('departure_town: ' + departure_town)
         print('arrival_town: ' + arrival_town)
         print('departure_time: ' + str(departure_time))
         print('arrival_time: ' + str(arrival_time))
         print('cost: ' + str(cost))
-        print('baggage_cost: ' + baggage_cost)
+        print('baggage_cost: ' + str(baggage_cost))
         print('link: ' + link)
         road = Road(transport_type=transport_type,
                     departure_town=departure_town,
@@ -405,7 +411,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
             if i.isdigit():
                 cost += i
         cost = int(cost)
-        link = 'ссылки нет, но вы держитесь'
+        link = driver.current_url
         baggage_cost = 0
         print('transport_type: ' + 'BUS')
         print('departure_town: ' + departure_town)
@@ -414,7 +420,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
         print('arrival_time: ' + str(arrival_time))
         print('cost: ' + str(cost))
         print('baggage_cost: ' + str(baggage_cost))
-        print('link: ' + 'Страница со всеми билетами:' + driver.current_url)
+        print('link: ' + 'Страница со всеми билетами:' + link)
         road = Road(transport_type=transport_type,
                     departure_town=departure_town,
                     arrival_town=arrival_town,
@@ -422,12 +428,11 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
                     arrival_time=arrival_time,
                     cost=cost,
                     baggage_cost=baggage_cost,
-                    link=driver.current_url
+                    link=link
                     )
         roads.append(road)
     driver.quit()
     return roads
-
 
 
 class YandexParser(RoadParser, ABC):
