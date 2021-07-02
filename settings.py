@@ -1,3 +1,11 @@
+def __init__():
+    try:
+        __read_settings()
+    except OSError:
+        __write_settings(__Settings(10000, 2))
+
+
+__init__()
 
 
 class __Settings:
