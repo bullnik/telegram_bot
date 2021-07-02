@@ -37,13 +37,19 @@ def data_entry_for_search(driver: webdriver,
     # там есть выпадающий список. Надо обязательно выбирать город из списка, иначе неизвестный город и иди накуй
     departure_dropbox_element = None
     is_dropbox_update = False
+    try_count = 0
     while not is_dropbox_update:
+        if try_count == 10:
+            print("Прямых маршрутов не существует")
+            driver.quit()
+            return False
         try:
             time.sleep(1)  # костыль, выпадающий список обновляется не моментально
             departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
             is_dropbox_update = True
         except selenium.common.exceptions.NoSuchElementException:
             print("Нехватило времени")
+            try_count += 1
     departure_dropbox_element.click()
 
     # Ищется поле с городом Куда (у прошлого элемента класс поменялся, поэтому это пашет)
@@ -61,8 +67,7 @@ def data_entry_for_search(driver: webdriver,
             return False
         try:
             time.sleep(1)  # опять костыль
-            arrival_dropbox_element = driver.find_element_by_xpath(
-                "//div[@class='_1mY6J _1QpxA']")  # таже хрень с выпадающим списком
+            arrival_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
             is_dropbox_update = True
         except selenium.common.exceptions.NoSuchElementException:
             print("Нехватило времени")
