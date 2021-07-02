@@ -27,7 +27,9 @@ def get_route_edit_keyboard():
                  types.InlineKeyboardButton('Показать/убрать самолеты', callback_data='2'),
                  types.InlineKeyboardButton('Показать/убрать поезда', callback_data='3'),
                  types.InlineKeyboardButton('Показать/убрать автобусы', callback_data='4'),
-                 types.InlineKeyboardButton('Добавить город', callback_data='5'))
+                 types.InlineKeyboardButton('Добавить город', callback_data='5'),
+                 types.InlineKeyboardButton('Удалить город', callback_data='6'),
+                 types.InlineKeyboardButton('Построить маршрут', callback_data='7'))
     return keyboard
 
 
@@ -63,10 +65,33 @@ def command_admin_callback(call):
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                               text=request_to_string(request))
         bot.register_next_step_handler(message, add_town_to_request)
+    elif call.data == '6':
+        message = bot.send_message(chat_id=call.message.chat.id,
+                                   text="Введите город в формате:\n"
+                                        "[Номер посещения] "
+                                        "[Название] ")
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
+                              text=request_to_string(request))
+        bot.register_next_step_handler(message, remove_town_from_request)
     else:
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                               text=request_to_string(request),
                               reply_markup=get_route_edit_keyboard())
+
+
+def remove_town_from_request(message):
+    user_id = message.from_user.id
+    request = controller.get_current_request(user_id)
+    parts = message.text.split()
+    if len(parts) != 3:
+        bot.send_message(user_id, text='Некорректные данные')
+        return
+    if not request.remove_town(parts[0], parts[1]):
+        bot.send_message(user_id, text='Некорректные данные')
+        return
+    bot.send_message(user_id,
+                     text=request_to_string(controller.get_current_request(user_id)),
+                     reply_markup=get_route_edit_keyboard())
 
 
 def add_town_to_request(message):
