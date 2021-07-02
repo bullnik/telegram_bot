@@ -414,7 +414,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
         print('arrival_time: ' + str(arrival_time))
         print('cost: ' + str(cost))
         print('baggage_cost: ' + str(baggage_cost))
-        print('link: ' + link)
+        print('link: ' + 'Страница со всеми билетами:' + driver.current_url)
         road = Road(transport_type=transport_type,
                     departure_town=departure_town,
                     arrival_town=arrival_town,
@@ -422,7 +422,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
                     arrival_time=arrival_time,
                     cost=cost,
                     baggage_cost=baggage_cost,
-                    link=link
+                    link=driver.current_url
                     )
         roads.append(road)
     driver.quit()
