@@ -426,6 +426,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     return roads
 
 
+
 class YandexParser(RoadParser, ABC):
     def __init__(self):
         super().__init__()
