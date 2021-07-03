@@ -2,7 +2,7 @@ from typing import List
 
 import telebot
 from telebot import types
-import controller
+from controller import Controller
 from answer import AnswerToUserRouteRequest
 from request import UserRequest
 from road import TransportType
@@ -15,6 +15,7 @@ start_message = "Используйте следующие команды:\n" \
                 "/favorites - избранное\n" \
                 "/route - построить маршрут\n" \
                 "/history - история моих запросов"
+controller = Controller()
 
 
 @bot.message_handler(commands=['start', 'help'])
