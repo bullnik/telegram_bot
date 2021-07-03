@@ -26,8 +26,11 @@ class UnfinishedRequest:
         except TypeError:
             return False
 
-        if len(self.possible_places_lists) < number_in_list:
+        if len(self.possible_places_lists) < number_in_list - 1:
             return False
+
+        if len(self.possible_places_lists) == number_in_list - 1:
+            self.possible_places_lists.append([])
 
         self.possible_places_lists[number_in_list - 1].append(PlaceToVisit(
             town_name, min_days, max_days))
@@ -43,10 +46,22 @@ class UnfinishedRequest:
         if len(self.possible_places_lists) < number_in_list:
             return False
 
+        is_town_deleted = False
         places = self.possible_places_lists[number_in_list - 1]
         for place in places:
             if place.name == town_name:
                 places.remove(place)
+                is_town_deleted = True
+
+        for i in range(len(self.possible_places_lists) - 1, 0, -1):
+            if len(self.possible_places_lists[i]) == 0:
+                self.possible_places_lists.pop(i)
+            else:
+                break
+
+        if is_town_deleted:
+            return True
+        return False
 
     def switch_train(self):
         try:
