@@ -12,6 +12,7 @@ CHROME_EXE_PATH = "chromedriver.exe"
 SEARCH_ERROR_TIME_WAIT = 5
 SEARCH_DIRECT_TICKETS = False
 SCROLL_DOWN_STEPS_COUNT = 5
+SETTINGS = settings.Settings()
 
 
 def get_month_name(month: int) -> str:
@@ -150,7 +151,7 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     # max_for_parsing = found_tickets_count \
     #     if found_tickets_count <= settings.get_max_count_parsed_roads() \
     #     else settings.get_max_count_parsed_roads()
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -254,7 +255,7 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     time.sleep(3)
 
     # сколько билетов парсить (берём из админ панели)
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -377,7 +378,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     time.sleep(3)
     # сколько билетов парсить (берём из админ панели)
     # для тестов пока так сделал
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     #
     # max_for_parsing = found_tickets_count if found_tickets_count <= max else max
     print("Всего будем парсить: " + str(max_for_parsing))

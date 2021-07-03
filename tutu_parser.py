@@ -10,6 +10,7 @@ import settings
 
 CHROME_EXE_PATH = "chromedriver.exe"
 SCROLL_DOWN_STEPS_COUNT = 5
+SETTINGS = settings.Settings()
 
 
 def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_time: datetime):
@@ -45,8 +46,8 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                               .find_elements_by_xpath(".//*")[0]
                               .text.split(' ')[0])
     max_for_parsing = found_tickets_count \
-        if found_tickets_count <= settings.get_max_count_parsed_roads() \
-        else settings.get_max_count_parsed_roads()
+        if found_tickets_count <= SETTINGS.get_max_count_parsed_roads() \
+        else SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -174,7 +175,7 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
 
 
 def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_town: str, min_departure_time: datetime):
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -259,7 +260,7 @@ def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
 
 
 def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_town: str, min_departure_time: datetime):
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -410,7 +411,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
 
 
 def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_town: str, min_departure_time: datetime):
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -499,7 +500,7 @@ def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
 
 
 def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_town: str, min_departure_time: datetime):
-    max_for_parsing = settings.get_max_count_parsed_roads()
+    max_for_parsing = SETTINGS.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 1
