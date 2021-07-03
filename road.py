@@ -53,4 +53,4 @@ class Road:
 
     @property
     def arrival_time(self) -> datetime:
-        return self.arrival_time
+        return self.__arrival_time

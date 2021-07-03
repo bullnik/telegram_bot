@@ -2,16 +2,38 @@ from typing import List
 
 import database
 import picture_creator
+import route_creator
 import settings
+from answer import AnswerToUserRouteRequest
 from database import init_database
 from place import PlaceToVisit
 from request import UserRequest
-from road import TransportType
+from road import TransportType, Road
 from unfinished_request import UnfinishedRequest
 
 __admin_password = 123
-#init_database()
+# init_database()
 unfinished_requests = []
+
+
+def get_answer_to_user_route_request(user_id: int) -> AnswerToUserRouteRequest:
+    user_request = get_current_request(user_id)
+    routes = route_creator.create_routes(user_request.possible_places_lists,
+                                         user_request.transport_types,
+                                         user_request.with_baggage)
+    low_cost_route = route_creator.get_low_cost_route(routes, user_request.with_baggage)
+    answer = AnswerToUserRouteRequest(user_request.possible_places_lists,
+                                      routes, low_cost_route)
+    database.insert_request(convert_to_finish_request(get_current_request(user_id)))
+    return answer
+
+
+def convert_to_finish_request(request: UnfinishedRequest):
+    finish_request = UserRequest(request.user_id,
+                                 request.possible_places_lists,
+                                 request.transport_types,
+                                 request.with_baggage)
+    return finish_request
 
 
 def get_current_request(user_id: int) -> UnfinishedRequest:
@@ -71,7 +93,7 @@ def set_max_count_parsed_roads(count) -> bool:
 def set_max_saved_roads_count(count) -> bool:
     try:
         count = int(count)
-        settings.set_max_count_parsed_roads(count)
+        settings.set_max_stored_roads(count)
         return True
     except ValueError:
         return False

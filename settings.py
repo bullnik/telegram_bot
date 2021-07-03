@@ -1,5 +1,3 @@
-
-
 class __Settings:
     def __init__(self, max_stored_roads: int,
                  max_count_parsed_roads: int):
@@ -46,3 +44,13 @@ def set_max_count_parsed_roads(value: int):
     settings = __read_settings()
     settings.max_count_parsed_roads = value
     __write_settings(settings)
+
+
+def __init__():
+    try:
+        __read_settings()
+    except OSError:
+        __write_settings(__Settings(10000, 2))
+
+
+__init__()

@@ -3,28 +3,35 @@ from typing import List
 import database
 from road import Road, TransportType
 from place import PlaceToVisit
+from test_parser import TestParser
 from yandex_parser import YandexParser
 
-parsers = [YandexParser()]
+parsers = [TestParser()]
 
 
 def create_routes(possible_places_lists: List[List[PlaceToVisit]],
                   transport_types: List[TransportType],
                   with_baggage: bool) -> List[List[Road]]:
     if len(possible_places_lists) < 2:
-        raise Exception("Too few places")
+        return []
 
     current_datetime = datetime.now()
-    routes = [[]]
+    routes = []
+
+    required_route_len = len(possible_places_lists) - 1
 
     recursive_traversal_places_and_adding_to_routes_list(possible_places_lists, transport_types,
                                                          with_baggage, routes, [], current_datetime)
+
+    for route in routes:
+        if len(route) < required_route_len:
+            routes.remove(route)
 
     return routes
 
 
 def get_low_cost_route(routes: List[List[Road]], with_baggage: bool) -> List[Road]:
-    low_cost_route = None
+    low_cost_route = []
     low_cost_route_cost = 9999999
     for route in routes:
         cost = 0
@@ -53,7 +60,7 @@ def recursive_traversal_places_and_adding_to_routes_list(possible_places_lists: 
 
     for current_place in current_places_list:
         for next_place in next_places_list:
-            for stay_days_count in range(current_place.min_stay_days, current_place.max_stay_days, 1):
+            for stay_days_count in range(current_place.min_stay_days, current_place.max_stay_days + 1):
                 try:
                     road = get_road(current_place.name, next_place.name, transport_types,
                                     current_datetime, with_baggage)
@@ -92,7 +99,7 @@ def get_road(departure_town: str, arrival_town: str,
         raise FileNotFoundError
 
     low_cost_road = get_low_cost_road(all_founded_roads, with_baggage)
-    database.insert_roads([low_cost_road])
+    # database.insert_roads([low_cost_road])
 
     return low_cost_road
 

@@ -17,7 +17,7 @@ def get_roads(departure_town: str, arrival_town: str,
 
     # находит и возвращает дороги из базы по заданным параметрам
 
-    raise NotImplemented
+    return []
 
 
 def insert_roads(roads: List[Road]):
@@ -40,14 +40,14 @@ def get_requests(user_id: int, requests_count: int) -> List[UserRequest]:
 
     # возвращает n последних запросов пользователя из базы
 
-    raise NotImplemented
+    return []
 
 
 def get_favorites_requests(user_id: int, requests_count) -> List[UserRequest]:
 
     # возвращает n последних избранных запросов
 
-    raise NotImplemented
+    return []
 
 
 def get_unique_users(last_days: int) -> List[int]:
@@ -55,4 +55,4 @@ def get_unique_users(last_days: int) -> List[int]:
     # возвращает лист количества уникальных пользователей
     # list[0] -> сегодня, list[1] -> вчера и т.д.
 
-    raise NotImplemented
+    return []
