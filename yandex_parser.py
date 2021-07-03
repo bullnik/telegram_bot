@@ -128,7 +128,10 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     if not search_result:
         return []
 
-    time.sleep(8)
+    time.sleep(3)
+
+    # Кнопка "Без пересадок"
+    """
     direct_button = driver.find_element_by_xpath(
         "//button[@class='Button2 YTButton YTButton_theme_secondary YTButton_size_m-inset Button2_width_max Button2_view_default YTButton_kind_check _32KGW']")
     try:
@@ -137,14 +140,17 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
         print('Билетов без пересадок нет')
         driver.quit()
         return []
+    """
+
 
     time.sleep(0.5)
-    found_tickets_count = int(driver.find_element_by_xpath("//span[@class='rzDEw']").text.split(' ')[1])
-    print("Найдено билетов: " + str(found_tickets_count))
+    # found_tickets_count = int(driver.find_element_by_xpath("//span[@class='rzDEw']").text.split(' ')[1])
+    # print("Найдено билетов: " + str(found_tickets_count))
 
     # сколько билетов парсить (берём из админ панели)
     # для тестов пока так сделал
-    max_for_parsing = found_tickets_count if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING else MAX_COUNT_TICKETS_FOR_PARSING
+    # max_for_parsing = found_tickets_count if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING else MAX_COUNT_TICKETS_FOR_PARSING
+    max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -153,6 +159,9 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath("//div[@class='_1y4vO _2-dbu lwCkE _3bJlE dK_Gv']")
+        if i == len(tickets):
+            max_for_parsing = i
+            break
         i = len(tickets)
         print('значение i: ' + str(i))
         print('значение max_for_parsing: ' + str(max_for_parsing))
@@ -176,14 +185,20 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
 
         ticket_arrival_time = tickets[j].find_element_by_xpath(
             ".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
-        day = min_departure_time.day
+        arrival_day = min_departure_time.day
         # часы приезда < часы выезда => прибыл в следующий день
         if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
-            day = min_departure_time.day + 1
+            arrival_day = min_departure_time.day + 1
+        arrival_month = min_departure_time.month
+        if arrival_day < departure_time.day:
+            arrival_month = min_departure_time.month + 1
+        arrival_year = min_departure_time.year
+        if arrival_month < departure_time.month:
+            arrival_year = min_departure_time.year + 1
         arrival_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
-                                  min_departure_time.year,
-                                  min_departure_time.month,
-                                  day,
+                                  arrival_year,
+                                  arrival_month,
+                                  arrival_day,
                                   ticket_arrival_time[0],
                                   ticket_arrival_time[1],
                                   '00')
@@ -291,24 +306,29 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
         departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
         ticket_arrival_time = tickets_time[1].text.split(':')
 
-        day = min_departure_time.day
+        arrival_day = min_departure_time.day
         if int(ticket_arrival_time[0]) < int(
                 ticket_departure_time[0]):  # часы приезда < часы выезда => прибыл в следующий день
-            day = min_departure_time.day + 1
+            arrival_day = min_departure_time.day + 1
         elif int(ticket_arrival_time[0]) == int(ticket_departure_time[0]):  # часы равны
             if int(ticket_arrival_time[1]) < int(ticket_departure_time[1]):  # проверяем минуты
-                day = min_departure_time.day + 1
+                arrival_day = min_departure_time.day + 1
         # если часы и минуты равны => сдедующий блок проверки
         # парсим время в пути
         # если есть дни => прибавляем количество дней
         days_in_way = tickets[j].find_element_by_xpath(".//div[@class='_3BdRQ _1dbOp _2uao0']").text.split(' ')
         if days_in_way[1] == 'дн.':
-            day += int(days_in_way[0])
-
+            arrival_day += int(days_in_way[0])
+        arrival_month = min_departure_time.month
+        if arrival_day < departure_time.day:
+            arrival_month = min_departure_time.month + 1
+        arrival_year = min_departure_time.year
+        if arrival_month < departure_time.month:
+            arrival_year = min_departure_time.year + 1
         arrival_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
-                                  min_departure_time.year,
-                                  min_departure_time.month,
-                                  day,
+                                  arrival_year,
+                                  arrival_month,
+                                  arrival_day,
                                   ticket_arrival_time[0],
                                   ticket_arrival_time[1],
                                   '00')
@@ -390,18 +410,23 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
         departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
         ticket_arrival_time = tickets_time[1].text.split(':')
 
-        day = min_departure_time.day
+        arrival_day = min_departure_time.day
         if int(ticket_arrival_time[0]) < int(
                 ticket_departure_time[0]):  # часы приезда < часы выезда => прибыл в следующий день
-            day = min_departure_time.day + 1
+            arrival_day = min_departure_time.day + 1
         elif int(ticket_arrival_time[0]) == int(ticket_departure_time[0]):  # часы равны
             if int(ticket_arrival_time[1]) < int(ticket_departure_time[1]):  # проверяем минуты
-                day = min_departure_time.day + 1
-
+                arrival_day = min_departure_time.day + 1
+        arrival_month = min_departure_time.month
+        if arrival_day < departure_time.day:
+            arrival_month = min_departure_time.month + 1
+        arrival_year = min_departure_time.year
+        if arrival_month < departure_time.month:
+            arrival_year = min_departure_time.year + 1
         arrival_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
-                                  min_departure_time.year,
-                                  min_departure_time.month,
-                                  day,
+                                  arrival_year,
+                                  arrival_month,
+                                  arrival_day,
                                   ticket_arrival_time[0],
                                   ticket_arrival_time[1],
                                   '00')
