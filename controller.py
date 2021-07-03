@@ -12,7 +12,7 @@ from road import TransportType, Road
 from unfinished_request import UnfinishedRequest
 
 __admin_password = 123
-# init_database()
+init_database()
 unfinished_requests = []
 
 
@@ -24,7 +24,7 @@ def get_answer_to_user_route_request(user_id: int) -> AnswerToUserRouteRequest:
     low_cost_route = route_creator.get_low_cost_route(routes, user_request.with_baggage)
     answer = AnswerToUserRouteRequest(user_request.possible_places_lists,
                                       routes, low_cost_route)
-    # database.insert_request(convert_to_finish_request(get_current_request(user_id)))
+    database.insert_request(convert_to_finish_request(get_current_request(user_id)))
     clear_user_request(user_id)
     return answer
 

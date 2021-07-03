@@ -6,7 +6,7 @@ from place import PlaceToVisit
 from test_parser import TestParser
 from yandex_parser import YandexParser
 
-parsers = [TestParser()]
+parsers = [YandexParser()]
 
 
 def create_routes(possible_places_lists: List[List[PlaceToVisit]],
@@ -99,7 +99,7 @@ def get_road(departure_town: str, arrival_town: str,
         raise FileNotFoundError
 
     low_cost_road = get_low_cost_road(all_founded_roads, with_baggage)
-    # database.insert_roads([low_cost_road])
+    database.insert_roads([low_cost_road])
 
     return low_cost_road
 

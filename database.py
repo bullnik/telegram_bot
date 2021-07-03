@@ -8,7 +8,7 @@ def init_database():
 
     # открыть базу и сделать там бим-бим бам-бам, чтобы остальные методы работали
 
-    raise NotImplemented
+    pass
 
 
 def get_roads(departure_town: str, arrival_town: str,
@@ -24,7 +24,7 @@ def insert_roads(roads: List[Road]):
 
     # вставляет дороги в базу
 
-    raise NotImplemented
+    pass
 
 
 def insert_request(request: UserRequest):
@@ -33,7 +33,7 @@ def insert_request(request: UserRequest):
     # также надо записать пользователя в отдельную табличку с уникальными юзерами
     # В обоих случаях указывать еще дату запроса: datetime.now()
 
-    raise NotImplemented
+    pass
 
 
 def get_requests(user_id: int, requests_count: int) -> List[UserRequest]:
