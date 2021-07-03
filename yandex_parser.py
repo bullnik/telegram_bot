@@ -239,10 +239,7 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     time.sleep(3)
 
     # сколько билетов парсить (берём из админ панели)
-    # для тестов пока так сделал
     max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
-    #
-    # max_for_parsing = found_tickets_count if found_tickets_count <= max else max
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0

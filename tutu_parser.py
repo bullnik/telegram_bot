@@ -147,7 +147,7 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     search_button = driver.find_element_by_xpath("//button[@class='b-button__arrow__button j-button j-button-submit _title j-submit_button _blue']")
     search_button.click()
 
-    time.sleep(3)
+    time.sleep(5)
     page1 = True
     try:
         driver.find_element_by_xpath("//div[@id='root']")
@@ -201,23 +201,12 @@ def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
         departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
 
         ticket_arrival_time = tickets_times[1].text.split(':')
-        day = min_departure_time.day
-        # часы приезда < часы выезда => прибыл в следующий день
-        if int(ticket_arrival_time[0]) < int(
-                ticket_departure_time[0]):  # часы приезда < часы выезда => прибыл в следующий день
-            day = min_departure_time.day + 1
-        elif int(ticket_arrival_time[0]) == int(ticket_departure_time[0]):  # часы равны
-            if int(ticket_arrival_time[1]) < int(ticket_departure_time[1]):  # проверяем минуты
-                day = min_departure_time.day + 1
-        # TODO заменить на парсинг дня из элемента, ибо день прибытия прописывается
-        days_in_way = tickets[j].find_element_by_xpath(".//div[@data-ti='mainText']").find_elements_by_xpath(".//*")[0].find_elements_by_xpath(".//*")[0].find_elements_by_xpath(".//*")[0].text.split(' ')
-        if days_in_way[1] == 'д':
-            day += int(days_in_way[0])
 
+        arrival_day = tickets[j].find_elements_by_xpath(".//span[@data-ti='stopover-date']")[1].text.split(' ')[0]
         arrival_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                   min_departure_time.year,
                                   min_departure_time.month,
-                                  day,
+                                  arrival_day,
                                   ticket_arrival_time[0],
                                   ticket_arrival_time[1],
                                   '00')
@@ -250,7 +239,7 @@ def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
                     link=link
                     )
         roads.append(road)
-    #driver.quit()
+    driver.quit()
     return roads
 
 
@@ -312,9 +301,9 @@ def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
         arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
 
-        # TODO Допилить цены, ибо оно может падать потому что возвращает пустую строку
         cost = ''
-        for i in str(tickets[j].find_element_by_xpath(".//div[@class='column card_price']").find_elements_by_xpath(".//*")[0].text):
+        cost_block = tickets[j].find_element_by_xpath(".//div[@class='column card_categories']").find_element_by_xpath(".//*").find_elements_by_xpath(".//*")[-1].text
+        for i in str(cost_block):
             if i.isdigit():
                 cost += i
         cost = int(cost)
@@ -340,7 +329,7 @@ def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
                     link=link
                     )
         roads.append(road)
-    driver.quit()
+    # driver.quit()
     return roads
 
 
@@ -374,7 +363,7 @@ class TutuParser(RoadParser, ABC):
         if transport_type == TransportType.PLANE:
             return True
         elif transport_type == TransportType.TRAIN:
-            return False
+            return True
         elif transport_type == TransportType.BUS:
             return False
         else:
