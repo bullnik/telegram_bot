@@ -145,7 +145,7 @@ def answer_to_string(answer: AnswerToUserRouteRequest) -> str:
     for road in answer.low_cost_route:
         text += str(i) + ': ' + transport_type_to_string(road.transport_type) + ' из '
         text += road.departure_town + ' в ' + road.arrival_town
-        text += '(' + str(road.departure_time) + ' - ' + str(road.arrival_time) + ')'
+        text += ' (' + str(road.departure_time)[:16] + ' - ' + str(road.arrival_time)[:16] + ')'
         text += ' - ' + road.link + '\n'
         i += 1
     return text
