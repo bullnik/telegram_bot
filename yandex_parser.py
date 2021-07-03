@@ -9,7 +9,6 @@ from selenium.webdriver.common.by import By
 import settings
 
 CHROME_EXE_PATH = "chromedriver.exe"
-MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
 SEARCH_ERROR_TIME_WAIT = 5
 SEARCH_DIRECT_TICKETS = False
 SCROLL_DOWN_STEPS_COUNT = 5
@@ -149,9 +148,9 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     # found_tickets_count = int(driver.find_element_by_xpath("//span[@class='rzDEw']").text.split(' ')[1])
     # print("Найдено билетов: " + str(found_tickets_count))
     # max_for_parsing = found_tickets_count \
-    #     if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING \
-    #     else MAX_COUNT_TICKETS_FOR_PARSING
-    max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
+    #     if found_tickets_count <= settings.get_max_count_parsed_roads() \
+    #     else settings.get_max_count_parsed_roads()
+    max_for_parsing = settings.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -255,7 +254,7 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     time.sleep(3)
 
     # сколько билетов парсить (берём из админ панели)
-    max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
+    max_for_parsing = settings.get_max_count_parsed_roads()
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -378,7 +377,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     time.sleep(3)
     # сколько билетов парсить (берём из админ панели)
     # для тестов пока так сделал
-    max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
+    max_for_parsing = settings.get_max_count_parsed_roads()
     #
     # max_for_parsing = found_tickets_count if found_tickets_count <= max else max
     print("Всего будем парсить: " + str(max_for_parsing))
