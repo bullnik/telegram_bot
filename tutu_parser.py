@@ -10,6 +10,7 @@ import settings
 
 CHROME_EXE_PATH = "chromedriver.exe"
 MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
+SCROLL_DOWN_STEPS_COUNT = 5
 
 
 def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_time: datetime):
@@ -38,18 +39,20 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     search_button = driver.find_element_by_xpath("//button[@class='order-group-element o33688 o33693 o33695']")
     search_button.click()
 
-    time.sleep(10)
+    time.sleep(1)
 
     found_tickets_count = int(driver.find_element_by_xpath("//span[@class='o33124 o338 o3330 o3363']")
                               .find_elements_by_xpath(".//*")[0]
                               .find_elements_by_xpath(".//*")[0]
                               .text.split(' ')[0])
-    max_for_parsing = found_tickets_count if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING else MAX_COUNT_TICKETS_FOR_PARSING
+    max_for_parsing = found_tickets_count \
+        if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING \
+        else MAX_COUNT_TICKETS_FOR_PARSING
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 10):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath("//div[@class='_3myc0zS07d6p2suflgjuDQ']")
@@ -151,18 +154,18 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     date_block.send_keys(min_departure_time.strftime('%d.%m.%Y'))
     time.sleep(1)
 
-    search_button = driver.find_element_by_xpath("//button[@class='b-button__arrow__button j-button j-button-submit _title j-submit_button _blue']")
+    search_button = driver.find_element_by_xpath(
+        "//button[@class='b-button__arrow__button j-button j-button-submit _title j-submit_button _blue']")
     search_button.click()
 
     time.sleep(5)
-    page1 = True
+
     try:
         driver.find_element_by_xpath("//div[@id='root']")
         page1 = True
     except selenium.common.exceptions.NoSuchElementException:
         page1 = False
 
-    roads = []
     if page1:
         roads = parse_train_tickets_page_1(driver, departure_town, arrival_town, min_departure_time)
     else:
@@ -177,7 +180,7 @@ def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 10):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath(
@@ -262,7 +265,7 @@ def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 10):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath(
@@ -318,15 +321,17 @@ def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
                                   '00')
         arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
-
         cost = ''
-        cost_block = tickets[j].find_element_by_xpath(".//div[@class='column card_categories']").find_element_by_xpath(".//*").find_elements_by_xpath(".//*")[-1].text
+        cost_block = tickets[j].find_element_by_xpath(
+            ".//div[@class='column card_categories']").find_element_by_xpath(
+            ".//*").find_elements_by_xpath(".//*")[-1].text
         for i in str(cost_block):
             if i.isdigit():
                 cost += i
         cost = int(cost)
 
-        link = tickets[j].find_element_by_xpath(".//a[@class='top_bottom_prices_wrapper top_bottom_prices_wrapper__link']").get_attribute('href')
+        link = tickets[j].find_element_by_xpath(
+            ".//a[@class='top_bottom_prices_wrapper top_bottom_prices_wrapper__link']").get_attribute('href')
         baggage_cost = 0
 
         print('transport_type: ' + 'TRAIN')
@@ -347,7 +352,7 @@ def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
                     link=link
                     )
         roads.append(road)
-    # driver.quit()
+    driver.quit()
     return roads
 
 
@@ -389,16 +394,14 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
         wait_time += 1
 
     time.sleep(8)
-    # index__wrapper___gzfy3
     div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
-    page1 = True
+
     try:
         div_element.find_element_by_xpath(".//tbody[@itemprop='offers']")
         page1 = True
     except selenium.common.exceptions.NoSuchElementException:
         page1 = False
 
-    roads = []
     if page1:
         roads = parse_buses_tickets_page_1(driver, departure_town, arrival_town, min_departure_time)
     else:
@@ -413,7 +416,7 @@ def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 3):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath(
@@ -432,8 +435,8 @@ def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
     roads = []
     for j in range(0, max_for_parsing):
         transport_type = TransportType.BUS
-        #tickets_times = tickets[j].find_elements_by_xpath(".//span[@data-ti='stopover-time']")
-        ticket_departure_time = tickets[j].find_element_by_xpath(".//td[@class='index__departure___16vG_']").text.split(':')
+        ticket_departure_time = tickets[j].find_element_by_xpath(
+            ".//td[@class='index__departure___16vG_']").text.split(':')
         departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                     min_departure_time.year,
                                     min_departure_time.month,
@@ -464,7 +467,9 @@ def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_t
         arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
         cost = ''
-        for i in str(tickets[j].find_element_by_xpath(".//td[@class='index__buy___2rAq9 index__not_for_sale___3RyM0 index__no_offers_for_sale___1FI53']").text):
+        cost_block = tickets[j].find_element_by_xpath(
+            ".//td[@class='index__buy___2rAq9 index__not_for_sale___3RyM0 index__no_offers_for_sale___1FI53']").text
+        for i in str(cost_block):
             if i.isdigit():
                 cost += i
         cost = int(cost)
@@ -499,9 +504,10 @@ def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 1
-    tickets = driver.find_elements_by_xpath("//div[@class='index__offer___1pMh_ index__hover___2AZR1 index__cheapest___29juA']")
+    tickets += driver.find_elements_by_xpath(
+        "//div[@class='index__offer___1pMh_ index__hover___2AZR1 index__cheapest___29juA']")
     while i < max_for_parsing:
-        for step in range(0, 3):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets += driver.find_elements_by_xpath("//div[@class='index__offer___1pMh_']")
@@ -519,8 +525,8 @@ def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
     roads = []
     for j in range(0, max_for_parsing):
         transport_type = TransportType.BUS
-        # tickets_times = tickets[j].find_elements_by_xpath(".//span[@data-ti='stopover-time']")
-        ticket_departure_time = tickets[j].find_element_by_xpath(".//span[@class='index__departure_time___j_JX4']").text.split(':')
+        ticket_departure_time = tickets[j].find_element_by_xpath(
+            ".//span[@class='index__departure_time___j_JX4']").text.split(':')
         departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                     min_departure_time.year,
                                     min_departure_time.month,
@@ -530,7 +536,8 @@ def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
                                     '00')
         departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
 
-        ticket_arrival_time = tickets[j].find_element_by_xpath(".//span[@class='index__arrival_time___161Ry']").text.split(':')
+        ticket_arrival_time = tickets[j].find_element_by_xpath(
+            ".//span[@class='index__arrival_time___161Ry']").text.split(':')
 
         arrival_day = min_departure_time.day
         if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
@@ -580,8 +587,6 @@ def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_t
         roads.append(road)
     driver.quit()
     return roads
-
-
 
 
 class TutuParser(RoadParser, ABC):

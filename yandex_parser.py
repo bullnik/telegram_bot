@@ -10,6 +10,9 @@ import settings
 
 CHROME_EXE_PATH = "chromedriver.exe"
 MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
+SEARCH_ERROR_TIME_WAIT = 5
+SEARCH_DIRECT_TICKETS = False
+SCROLL_DOWN_STEPS_COUNT = 5
 
 
 def get_month_name(month: int) -> str:
@@ -37,7 +40,7 @@ def data_entry_for_search(driver: webdriver,
     is_dropbox_update = False
     try_count = 0
     while not is_dropbox_update:
-        if try_count == 10:
+        if try_count == SEARCH_ERROR_TIME_WAIT:
             print("Неверное название города Откуда")
             driver.quit()
             return False
@@ -59,7 +62,7 @@ def data_entry_for_search(driver: webdriver,
     is_dropbox_update = False
     try_count = 0
     while not is_dropbox_update:
-        if try_count == 10:
+        if try_count == SEARCH_ERROR_TIME_WAIT:
             print("Прямых маршрутов не существует или неверное название города Куда")
             driver.quit()
             return False
@@ -131,31 +134,29 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     time.sleep(3)
 
     # Кнопка "Без пересадок"
-    """
-    direct_button = driver.find_element_by_xpath(
-        "//button[@class='Button2 YTButton YTButton_theme_secondary YTButton_size_m-inset Button2_width_max Button2_view_default YTButton_kind_check _32KGW']")
-    try:
-        direct_button.click()
-    except selenium.common.exceptions.ElementClickInterceptedException:
-        print('Билетов без пересадок нет')
-        driver.quit()
-        return []
-    """
+    if SEARCH_DIRECT_TICKETS:
+        direct_button = driver.find_element_by_xpath(
+            "//button[@class='Button2 YTButton YTButton_theme_secondary YTButton_size_m-inset Button2_width_max "
+            "Button2_view_default YTButton_kind_check _32KGW']")
+        try:
+            direct_button.click()
+        except selenium.common.exceptions.ElementClickInterceptedException:
+            print('Билетов без пересадок нет')
+            driver.quit()
+            return []
+        time.sleep(0.5)
 
-
-    time.sleep(0.5)
     # found_tickets_count = int(driver.find_element_by_xpath("//span[@class='rzDEw']").text.split(' ')[1])
     # print("Найдено билетов: " + str(found_tickets_count))
-
-    # сколько билетов парсить (берём из админ панели)
-    # для тестов пока так сделал
-    # max_for_parsing = found_tickets_count if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING else MAX_COUNT_TICKETS_FOR_PARSING
+    # max_for_parsing = found_tickets_count \
+    #     if found_tickets_count <= MAX_COUNT_TICKETS_FOR_PARSING \
+    #     else MAX_COUNT_TICKETS_FOR_PARSING
     max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 10):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath("//div[@class='_1y4vO _2-dbu lwCkE _3bJlE dK_Gv']")
@@ -259,11 +260,12 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 10):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath(
-            "//div[@class='_1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI STrwo root_desktop']")
+            "//div[@class='_1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI _3yorf']")
+        # _1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI STrwo root_desktop
         if i == len(tickets):
             max_for_parsing = i
             break
@@ -279,9 +281,10 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     roads = []
     for j in range(0, max_for_parsing):
         cost = ''
-        ticket_block_cost = None
         try:
-            ticket_block_cost = tickets[j].find_element_by_xpath(".//div[@class='_26a8m _2diRi _1KHmH']").find_elements_by_xpath(".//*")[0]
+            ticket_block_cost = tickets[j].find_element_by_xpath(
+                ".//div[@class='_26a8m _2Odvx _1KHmH']").find_elements_by_xpath(".//*")[0]
+            # _26a8m _2diRi _1KHmH
         except IndexError:
             continue
         if ticket_block_cost.text == 'Билеты в кассах' or ticket_block_cost.text == 'Места закончились':
@@ -335,8 +338,10 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
         arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
         link = tickets[j].find_element_by_xpath(
-            ".//a[@class='Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max Button2_view_default Button2_type_router-link']") \
-            .get_attribute('href')
+            ".//a[@class='Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max "
+            "Button2_view_default Button2_type_link']").get_attribute('href')
+        # "Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max "
+        # "Button2_view_default Button2_type_router-link"
         baggage_cost = 0
         print('transport_type: ' + 'TRAIN')
         print('departure_town: ' + departure_town)
@@ -380,7 +385,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     tickets = []
     i = 0
     while i < max_for_parsing:
-        for step in range(0, 10):
+        for step in range(0, SCROLL_DOWN_STEPS_COUNT):
             driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
             time.sleep(0.5)
         tickets = driver.find_elements_by_xpath(
