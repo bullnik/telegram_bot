@@ -6,11 +6,11 @@ from road import *
 from selenium import webdriver
 import selenium.common.exceptions
 from selenium.webdriver.common.by import By
+import settings
 
-# Путь к драйверу хрома чтоб работало, у каждого свой путь... (ауф)
 CHROME_EXE_PATH = "chromedriver.exe"
+MAX_COUNT_TICKETS_FOR_PARSING = settings.get_max_count_parsed_roads()
 
-MAX_COUNT_TICKETS_FOR_PARSING = 80
 
 def get_month_name(month: int) -> str:
     month_names = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь',
@@ -21,6 +21,7 @@ def get_month_name(month: int) -> str:
 def data_entry_for_search(driver: webdriver,
                           departure_town: str, arrival_town: str,
                           min_departure_time: datetime, transport_type: str) -> bool:
+    driver.set_window_size(1500, 1000)
     driver.get(str.format("https://travel.yandex.ru/{0}/", transport_type))  # какой сайт запускает
 
     clear_button = driver.find_element_by_class_name('_1-YdI')  # это кнопка чтоб удалить содержимое текстового поля
@@ -34,13 +35,19 @@ def data_entry_for_search(driver: webdriver,
     # там есть выпадающий список. Надо обязательно выбирать город из списка, иначе неизвестный город и иди накуй
     departure_dropbox_element = None
     is_dropbox_update = False
+    try_count = 0
     while not is_dropbox_update:
+        if try_count == 10:
+            print("Неверное название города Откуда")
+            driver.quit()
+            return False
         try:
             time.sleep(1)  # костыль, выпадающий список обновляется не моментально
             departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
             is_dropbox_update = True
         except selenium.common.exceptions.NoSuchElementException:
             print("Нехватило времени")
+            try_count += 1
     departure_dropbox_element.click()
 
     # Ищется поле с городом Куда (у прошлого элемента класс поменялся, поэтому это пашет)
@@ -53,13 +60,12 @@ def data_entry_for_search(driver: webdriver,
     try_count = 0
     while not is_dropbox_update:
         if try_count == 10:
-            print("Прямых маршрутов не существует")
+            print("Прямых маршрутов не существует или неверное название города Куда")
             driver.quit()
             return False
         try:
             time.sleep(1)  # опять костыль
-            arrival_dropbox_element = driver.find_element_by_xpath(
-                "//div[@class='_1mY6J _1QpxA']")  # таже хрень с выпадающим списком
+            arrival_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
             is_dropbox_update = True
         except selenium.common.exceptions.NoSuchElementException:
             print("Нехватило времени")
@@ -122,7 +128,7 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     if not search_result:
         return []
 
-    time.sleep(15)
+    time.sleep(8)
     direct_button = driver.find_element_by_xpath(
         "//button[@class='Button2 YTButton YTButton_theme_secondary YTButton_size_m-inset Button2_width_max Button2_view_default YTButton_kind_check _32KGW']")
     try:
@@ -156,7 +162,6 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
 
     roads = []
     for j in range(0, max_for_parsing):
-        # ticket = tickets[0]
         transport_type = TransportType.PLANE
         ticket_departure_time = tickets[j].find_element_by_xpath(
             ".//span[@class='bX2B3 _3c05m JIKEi _2uao0']").text.split(':')
@@ -168,8 +173,9 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                                     ticket_departure_time[1],
                                     '00')
         departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
-        ticket_arrival_time = tickets[j].find_element_by_xpath(".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
 
+        ticket_arrival_time = tickets[j].find_element_by_xpath(
+            ".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
         day = min_departure_time.day
         # часы приезда < часы выезда => прибыл в следующий день
         if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
@@ -188,18 +194,23 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                 cost += i
         cost = int(cost)
         link = tickets[j].find_element_by_xpath(".//a[@class='_25xbA']").get_attribute('href')
-        baggage_cost = '0'
+
+        baggage_cost = 0
         check_box = tickets[j].find_elements_by_xpath(".//input[@class='Checkbox-Control']")[1].get_attribute(
             'aria-checked')
         if check_box == 'false':
-            baggage_cost = tickets[j].find_element_by_xpath(".//span[@class='_3XOAe']").text
+            baggage_cost = ''
+            for i in str(tickets[j].find_element_by_xpath(".//span[@class='_3XOAe']").text):
+                if i.isdigit():
+                    baggage_cost += i
+            baggage_cost = int(baggage_cost)
         print('transport_type: ' + 'PLANE')
         print('departure_town: ' + departure_town)
         print('arrival_town: ' + arrival_town)
         print('departure_time: ' + str(departure_time))
         print('arrival_time: ' + str(arrival_time))
         print('cost: ' + str(cost))
-        print('baggage_cost: ' + baggage_cost)
+        print('baggage_cost: ' + str(baggage_cost))
         print('link: ' + link)
         road = Road(transport_type=transport_type,
                     departure_town=departure_town,
@@ -211,7 +222,7 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
                     link=link
                     )
         roads.append(road)
-        driver.quit()
+    driver.quit()
     return roads
 
 
@@ -225,13 +236,10 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     if not search_result:
         return []
 
-    time.sleep(15)
+    time.sleep(3)
 
     # сколько билетов парсить (берём из админ панели)
-    # для тестов пока так сделал
     max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
-    #
-    # max_for_parsing = found_tickets_count if found_tickets_count <= max else max
     print("Всего будем парсить: " + str(max_for_parsing))
     tickets = []
     i = 0
@@ -342,7 +350,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     if not search_result:
         return []
 
-    time.sleep(15)
+    time.sleep(3)
     # сколько билетов парсить (берём из админ панели)
     # для тестов пока так сделал
     max_for_parsing = MAX_COUNT_TICKETS_FOR_PARSING
@@ -403,7 +411,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
             if i.isdigit():
                 cost += i
         cost = int(cost)
-        link = 'ссылки нет, но вы держитесь'
+        link = driver.current_url
         baggage_cost = 0
         print('transport_type: ' + 'BUS')
         print('departure_town: ' + departure_town)
@@ -412,7 +420,7 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
         print('arrival_time: ' + str(arrival_time))
         print('cost: ' + str(cost))
         print('baggage_cost: ' + str(baggage_cost))
-        print('link: ' + link)
+        print('link: ' + 'Страница со всеми билетами:' + link)
         road = Road(transport_type=transport_type,
                     departure_town=departure_town,
                     arrival_town=arrival_town,
@@ -425,7 +433,6 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
         roads.append(road)
     driver.quit()
     return roads
-
 
 
 class YandexParser(RoadParser, ABC):
@@ -450,10 +457,10 @@ class YandexParser(RoadParser, ABC):
 
     def can_parse_transport(self, transport_type: TransportType) -> bool:
         if transport_type == TransportType.PLANE:
-            return False
+            return True
         elif transport_type == TransportType.TRAIN:
-            return False
+            return True
         elif transport_type == TransportType.BUS:
-            return False
+            return True
         else:
             raise NotImplemented()
