@@ -26,6 +26,9 @@ class UnfinishedRequest:
         except TypeError:
             return False
 
+        if min_days > max_days:
+            return False
+
         if len(self.possible_places_lists) < number_in_list - 1:
             return False
 

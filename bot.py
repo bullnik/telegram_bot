@@ -136,10 +136,11 @@ def command_admin_callback(call):
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
 
 
-
 def answer_to_string(answer: AnswerToUserRouteRequest) -> str:
     text = ''
-    text += 'Найдено ' + str(answer.all_routes_count) + ' возможных маршрутов, вот самый дешевый из них: \n'
+    text += 'Найдено ' + str(answer.all_routes_count) + ' возможных маршрутов. '
+    if answer.all_routes_count != 0:
+        text += 'Вот самый дешевый из них: \n'
     i = 1
     for road in answer.low_cost_route:
         text += str(i) + ': ' + transport_type_to_string(road.transport_type) + ' из '
@@ -147,6 +148,8 @@ def answer_to_string(answer: AnswerToUserRouteRequest) -> str:
         text += '(' + str(road.departure_time) + ' - ' + str(road.arrival_time) + ')'
         text += ' - ' + road.link + '\n'
         i += 1
+    return text
+
 
 def get_route_edit_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=1)
@@ -193,11 +196,11 @@ def add_town_to_request(message):
 def transport_type_to_string(transport_type: TransportType):
     text = ''
     if transport_type == TransportType.PLANE:
-        text += 'Самолет '
+        text += 'Самолет'
     elif transport_type == TransportType.TRAIN:
-        text += 'Поезд '
+        text += 'Поезд'
     elif transport_type == TransportType.BUS:
-        text += 'Автобус '
+        text += 'Автобус'
     return text
 
 
@@ -206,7 +209,7 @@ def request_to_string(request: UnfinishedRequest) -> str:
     # text += "Id пользователя: " + str(request.user_id) + '\n'
     text += "Виды транспорта: "
     for transport_type in request.transport_types:
-        text += transport_type_to_string(transport_type)
+        text += transport_type_to_string(transport_type) + ' '
     text += '\n'
     text += "С багажом: "
     if request.with_baggage:

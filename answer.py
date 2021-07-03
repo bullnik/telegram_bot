@@ -9,7 +9,7 @@ class AnswerToUserRouteRequest:
     def __init__(self, possible_places_lists: List[List[PlaceToVisit]],
                  routes: List[List[Road]],
                  low_cost_route: List[Road]):
-        self.__pic = picture_creator.create_graph(possible_places_lists, routes, low_cost_route)
+        self.__pic = None  # picture_creator.create_graph(possible_places_lists, routes, low_cost_route)
         self.__all_routes_count = len(routes)
         self.__low_cost_route = low_cost_route
 

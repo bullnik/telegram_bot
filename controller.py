@@ -24,7 +24,16 @@ def get_answer_to_user_route_request(user_id: int) -> AnswerToUserRouteRequest:
     low_cost_route = route_creator.get_low_cost_route(routes, user_request.with_baggage)
     answer = AnswerToUserRouteRequest(user_request.possible_places_lists,
                                       routes, low_cost_route)
+    database.insert_request(convert_to_finish_request(get_current_request(user_id)))
     return answer
+
+
+def convert_to_finish_request(request: UnfinishedRequest):
+    finish_request = UserRequest(request.user_id,
+                                 request.possible_places_lists,
+                                 request.transport_types,
+                                 request.with_baggage)
+    return finish_request
 
 
 def get_current_request(user_id: int) -> UnfinishedRequest:
