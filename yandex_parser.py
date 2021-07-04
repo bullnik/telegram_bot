@@ -4,7 +4,7 @@ from abc import ABC
 from road_parser import *
 from road import *
 from selenium import webdriver
-import selenium.common.exceptions
+import selenium.common.exceptions as ex
 from selenium.webdriver.common.by import By
 import settings
 
@@ -59,12 +59,20 @@ class YandexParser(RoadParser, ABC):
         driver.get(str.format("https://travel.yandex.ru/{0}/", transport_type))  # какой сайт запускает
 
         time.sleep(1)
-        clear_button = driver.find_element_by_class_name('_1-YdI')  # это кнопка чтоб удалить содержимое текстового поля
+        try:
+            clear_button = driver.find_element_by_class_name('_1-YdI')  # это кнопка чтоб удалить содержимое текстового поля
+        except ex.NoSuchElementException:
+            print("Не удалось найти кнопку очистки поля Откуда")
+            return False
         clear_button.click()  # чистим поле чтоб ввести свой город
 
         # Ищется первое поле с городом Откуда
         time.sleep(1)
-        departure = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']")
+        try:
+            departure = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Откуда')
+            return False
         print(departure)  # проверка
         departure.send_keys(departure_town)  # тут будет подставляться город Откуда
 
@@ -81,14 +89,18 @@ class YandexParser(RoadParser, ABC):
                 time.sleep(1)  # костыль, выпадающий список обновляется не моментально
                 departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
                 is_dropbox_update = True
-            except selenium.common.exceptions.NoSuchElementException:
+            except ex.NoSuchElementException:
                 print("Нехватило времени")
                 try_count += 1
         departure_dropbox_element.click()
 
         # Ищется поле с городом Куда (у прошлого элемента класс поменялся, поэтому это пашет)
         time.sleep(1)
-        arrival = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']")
+        try:
+            arrival = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Куда')
+            return False
         print(arrival)  # для проверки что всё норм в консоль пишется элемент
         arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
 
@@ -104,7 +116,7 @@ class YandexParser(RoadParser, ABC):
                 time.sleep(1)  # опять костыль
                 arrival_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
                 is_dropbox_update = True
-            except selenium.common.exceptions.NoSuchElementException:
+            except ex.NoSuchElementException:
                 print("Нехватило времени")
                 try_count += 1
         arrival_dropbox_element.click()
@@ -112,12 +124,20 @@ class YandexParser(RoadParser, ABC):
         print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
         print("Куда: " + arrival.get_attribute('value'))  #
 
-        scroll_element = driver.find_element_by_xpath("//div[@class='oOXaP']")
+        try:
+            scroll_element = driver.find_element_by_xpath("//div[@class='oOXaP']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти колендарь выбора дня")
+            return False
         driver.execute_script("arguments[0].scrollTo(0, 3000)", scroll_element)
 
         # тут значит берутся все блоки месяцов (1-31 дни)
         time.sleep(1)
-        month_blocks = driver.find_elements_by_xpath("//div[@class='_1Gwsc']")
+        try:
+            month_blocks = driver.find_elements_by_xpath("//div[@class='_1Gwsc']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти блоки с месяцами")
+            return False
         print("Блоков с месяцами: " + str(len(month_blocks)))
         # Ищем нужный месяц
         month = []
@@ -131,8 +151,12 @@ class YandexParser(RoadParser, ABC):
                 month.append(var_month)
 
                 # в блоке одного месяца ищем доступные дни
-                days_red_blocks = block.find_elements(By.XPATH, ".//div[@class='_3AlmX aUJA2 _38-9Y']")
-                days_black_blocks = block.find_elements(By.XPATH, ".//div[@class='_3AlmX _38-9Y']")
+                try:
+                    days_red_blocks = block.find_elements(By.XPATH, ".//div[@class='_3AlmX aUJA2 _38-9Y']")
+                    days_black_blocks = block.find_elements(By.XPATH, ".//div[@class='_3AlmX _38-9Y']")
+                except ex.NoSuchElementException:
+                    print("Не удалось найти дни в блоке месяца")
+                    return False
                 all_days.extend(days_red_blocks + days_black_blocks)
                 print("Сколько дней в месяце: " + str(len(all_days)))
         # Находим нужный день
@@ -141,17 +165,21 @@ class YandexParser(RoadParser, ABC):
             day = day_block.find_elements_by_xpath(".//*")  # получаем всех потомков
             print("Проверяется день: " + day[0].text)
             if day[0].text == str(min_departure_time.day):  # нужен первый блок <span> (будет подставляться день)
-                print("День правильный. Чотка")
+                print("День правильный")
                 break
         day[0].click()  # Нажимаем по дню чтоб выбрать
-        search_button = driver.find_element_by_xpath("//div[@class='_1XCvB']")
+        try:
+            search_button = driver.find_element_by_xpath("//div[@class='_1XCvB']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти кнопку поиска")
+            return False
         search_button.click()
 
         time.sleep(2)
         try:
             driver.find_element_by_xpath("//h1[@class='_12F9-']")
             return False
-        except selenium.common.exceptions.NoSuchElementException:
+        except ex.NoSuchElementException:
             return True
 
     def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
@@ -173,17 +201,12 @@ class YandexParser(RoadParser, ABC):
                 "Button2_view_default YTButton_kind_check _32KGW']")
             try:
                 direct_button.click()
-            except selenium.common.exceptions.ElementClickInterceptedException:
+            except ex.ElementClickInterceptedException:
                 print('Билетов без пересадок нет')
                 driver.quit()
                 return []
             time.sleep(0.5)
 
-        # found_tickets_count = int(driver.find_element_by_xpath("//span[@class='rzDEw']").text.split(' ')[1])
-        # print("Найдено билетов: " + str(found_tickets_count))
-        # max_for_parsing = found_tickets_count \
-        #     if found_tickets_count <= settings.get_max_count_parsed_roads() \
-        #     else settings.get_max_count_parsed_roads()
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -192,7 +215,11 @@ class YandexParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath("//div[@class='_1y4vO _2-dbu lwCkE _3bJlE dK_Gv']")
+            try:
+                tickets = driver.find_elements_by_xpath("//div[@class='_1y4vO _2-dbu lwCkE _3bJlE dK_Gv']")
+            except ex.NoSuchElementException:
+                print("Не удалось найти билеты")
+                return []
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -206,8 +233,12 @@ class YandexParser(RoadParser, ABC):
         roads = []
         for j in range(0, max_for_parsing):
             transport_type = TransportType.PLANE
-            ticket_departure_time = tickets[j].find_element_by_xpath(
-                ".//span[@class='bX2B3 _3c05m JIKEi _2uao0']").text.split(':')
+            try:
+                ticket_departure_time = tickets[j].find_element_by_xpath(
+                    ".//span[@class='bX2B3 _3c05m JIKEi _2uao0']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось получить время выезда")
+                continue
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
                                         min_departure_time.month,
@@ -217,8 +248,12 @@ class YandexParser(RoadParser, ABC):
                                         '00')
             departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
 
-            ticket_arrival_time = tickets[j].find_element_by_xpath(
-                ".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
+            try:
+                ticket_arrival_time = tickets[j].find_element_by_xpath(
+                    ".//span[@class='_3c05m JIKEi _2uao0']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось получить время приезда")
+                continue
             arrival_day = min_departure_time.day
             # часы приезда < часы выезда => прибыл в следующий день
             if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
@@ -237,22 +272,41 @@ class YandexParser(RoadParser, ABC):
                                       ticket_arrival_time[1],
                                       '00')
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
+            try:
+                cost_block = tickets[j].find_element_by_xpath(".//span[@class='_3XOAe price _1oFrq']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
             cost = ''
-            for i in str(tickets[j].find_element_by_xpath(".//span[@class='_3XOAe price _1oFrq']").text):
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
-            link = tickets[j].find_element_by_xpath(".//a[@class='_25xbA']").get_attribute('href')
+            try:
+                link = tickets[j].find_element_by_xpath(".//a[@class='_25xbA']").get_attribute('href')
+            except ex.NoSuchElementException:
+                print("Не удалось получить сслку на билет")
+                link = driver.current_url
 
             baggage_cost = 0
-            check_box = tickets[j].find_elements_by_xpath(".//input[@class='Checkbox-Control']")[1].get_attribute(
-                'aria-checked')
+            try:
+                check_box = tickets[j].find_elements_by_xpath(".//input[@class='Checkbox-Control']")[1].get_attribute(
+                    'aria-checked')
+            except ex.NoSuchElementException:
+                print("Не удалось получить статус багажа")
+                check_box = 'true'
             if check_box == 'false':
                 baggage_cost = ''
-                for i in str(tickets[j].find_element_by_xpath(".//span[@class='_3XOAe']").text):
-                    if i.isdigit():
-                        baggage_cost += i
-                baggage_cost = int(baggage_cost)
+                try:
+                    baggage_cost_box = tickets[j].find_element_by_xpath(".//span[@class='_3XOAe']")
+                    for i in str(baggage_cost_box.text):
+                        if i.isdigit():
+                            baggage_cost += i
+                    baggage_cost = int(baggage_cost)
+                except ex.NoSuchElementException:
+                    print("Не удалось получить цену багажа")
+                    baggage_cost = 0
+
             print('transport_type: ' + 'PLANE')
             print('departure_town: ' + departure_town)
             print('arrival_town: ' + arrival_town)
@@ -295,9 +349,14 @@ class YandexParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath(
-                "//div[@class='_1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI _3yorf']")
-            # _1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI STrwo root_desktop
+            try:
+                tickets = driver.find_elements_by_xpath(
+                    "//div[@class='_1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI _3yorf']")
+                # _1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI STrwo root_desktop
+            except ex.NoSuchElementException:
+                print("Не удалось найти билеты")
+                return []
+
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -306,8 +365,6 @@ class YandexParser(RoadParser, ABC):
             print('значение max_for_parsing: ' + str(max_for_parsing))
             print('Бесконечный цикл?')
 
-        # Тут сразу из тега <a> можно вытащить href ссылку на покупку билета
-        # tickets = driver.find_elements_by_xpath("//a[@class='_25xbA']")
         print("Билетов всего: " + str(len(tickets)))
 
         roads = []
@@ -317,6 +374,9 @@ class YandexParser(RoadParser, ABC):
                 ticket_block_cost = tickets[j].find_element_by_xpath(
                     ".//div[@class='_26a8m _2Odvx _1KHmH']").find_elements_by_xpath(".//*")[0]
                 # _26a8m _2diRi _1KHmH
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
             except IndexError:
                 continue
             if ticket_block_cost.text == 'Билеты в кассах' or ticket_block_cost.text == 'Места закончились':
@@ -327,9 +387,12 @@ class YandexParser(RoadParser, ABC):
             cost = int(cost)
 
             transport_type = TransportType.TRAIN
-            tickets_time = tickets[j].find_element_by_xpath(".//div[@class='points _166IL _2GPch kHxiA']") \
-                .find_elements_by_xpath(".//span[@class='time']")
-
+            try:
+                tickets_time = tickets[j].find_element_by_xpath(".//div[@class='points _166IL _2GPch kHxiA']") \
+                    .find_elements_by_xpath(".//span[@class='time']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить время")
+                continue
             ticket_departure_time = tickets_time[0].text.split(':')
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
@@ -339,8 +402,8 @@ class YandexParser(RoadParser, ABC):
                                         ticket_departure_time[1],
                                         '00')
             departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
-            ticket_arrival_time = tickets_time[1].text.split(':')
 
+            ticket_arrival_time = tickets_time[1].text.split(':')
             arrival_day = min_departure_time.day
             if int(ticket_arrival_time[0]) < int(
                     ticket_departure_time[0]):  # часы приезда < часы выезда => прибыл в следующий день
@@ -351,7 +414,11 @@ class YandexParser(RoadParser, ABC):
             # если часы и минуты равны => сдедующий блок проверки
             # парсим время в пути
             # если есть дни => прибавляем количество дней
-            days_in_way = tickets[j].find_element_by_xpath(".//div[@class='_3BdRQ _1dbOp _2uao0']").text.split(' ')
+            try:
+                days_in_way = tickets[j].find_element_by_xpath(".//div[@class='_3BdRQ _1dbOp _2uao0']").text.split(' ')
+            except ex.NoSuchElementException:
+                print("Не удалось получить количество дней в пути")
+                continue
             if days_in_way[1] == 'дн.':
                 arrival_day += int(days_in_way[0])
             arrival_month = min_departure_time.month
@@ -368,12 +435,15 @@ class YandexParser(RoadParser, ABC):
                                       ticket_arrival_time[1],
                                       '00')
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
-
-            link = tickets[j].find_element_by_xpath(
-                ".//a[@class='Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max "
-                "Button2_view_default Button2_type_link']").get_attribute('href')
-            # "Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max "
-            # "Button2_view_default Button2_type_router-link"
+            try:
+                link = tickets[j].find_element_by_xpath(
+                    ".//a[@class='Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max "
+                    "Button2_view_default Button2_type_link']").get_attribute('href')
+                # "Button2 YTButton YTButton_theme_primary YTButton_size_m-inset Button2_width_max "
+                # "Button2_view_default Button2_type_router-link"
+            except ex.NoSuchElementException:
+                print("Не удалось получить ссылку")
+                link = driver.current_url
             baggage_cost = 0
             print('transport_type: ' + 'TRAIN')
             print('departure_town: ' + departure_town)
@@ -407,11 +477,8 @@ class YandexParser(RoadParser, ABC):
             return []
 
         time.sleep(3)
-        # сколько билетов парсить (берём из админ панели)
-        # для тестов пока так сделал
+
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
-        #
-        # max_for_parsing = found_tickets_count if found_tickets_count <= max else max
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
         i = 0
@@ -419,8 +486,12 @@ class YandexParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath(
-                "//div[@class='_1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI _3wScJ udQ3v']")
+            try:
+                tickets = driver.find_elements_by_xpath(
+                    "//div[@class='_1y4vO _2-dbu lwCkE _34jm4 _1DCdL L84HM _1I3zI _3wScJ udQ3v']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить билеты")
+                return []
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -433,8 +504,11 @@ class YandexParser(RoadParser, ABC):
         roads = []
         for j in range(0, max_for_parsing):
             transport_type = TransportType.BUS
-            tickets_time = tickets[j].find_elements_by_xpath(".//span[@class='_3c05m JIKEi _2uao0']")
-
+            try:
+                tickets_time = tickets[j].find_elements_by_xpath(".//span[@class='_3c05m JIKEi _2uao0']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить время")
+                continue
             ticket_departure_time = tickets_time[0].text.split(':')
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
@@ -468,7 +542,12 @@ class YandexParser(RoadParser, ABC):
                                       '00')
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
             cost = ''
-            for i in str(tickets[j].find_element_by_xpath(".//span[@class='_3XOAe _2q0ht']").text):
+            try:
+                cost_block = tickets[j].find_element_by_xpath(".//span[@class='_3XOAe _2q0ht']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
