@@ -43,7 +43,7 @@ class TutuParser(RoadParser, ABC):
         else:
             raise NotImplemented()
 
-    def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(CHROME_EXE_PATH)
         driver.set_window_size(1500, 1000)
         driver.get("https://avia.tutu.ru/")
@@ -194,7 +194,7 @@ class TutuParser(RoadParser, ABC):
         driver.quit()
         return roads
 
-    def parse_train_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_train_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(CHROME_EXE_PATH)
         driver.set_window_size(1500, 1000)
         driver.get("https://www.tutu.ru/poezda/")
@@ -257,7 +257,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -361,7 +361,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -483,7 +483,7 @@ class TutuParser(RoadParser, ABC):
         driver.quit()
         return roads
 
-    def parse_buses_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_buses_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(CHROME_EXE_PATH)
         driver.set_window_size(1500, 1000)
         driver.get("https://bus.tutu.ru/")
@@ -559,7 +559,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -665,7 +665,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
