@@ -1,5 +1,6 @@
 from typing import List
 
+#import picture_creator
 import picture_creator
 from place import PlaceToVisit
 from road import Road

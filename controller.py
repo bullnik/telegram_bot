@@ -23,13 +23,13 @@ class Controller:
         unfinished_request.with_baggage = request.with_baggage
         unfinished_request.possible_places_lists = request.possible_places_lists
         unfinished_request.transport_types = request.transport_types
-        unfinished_request.transport_types = request.is_favorite
+        unfinished_request.is_favorite = request.is_favorite
         self.__unfinished_requests.append(unfinished_request)
 
     def load_last(self, user_id: int, num: int) -> bool:
         requests = self.__db.get_requests(user_id, num)
         if len(requests) > 0:
-            request = requests[len(requests) - 1]
+            request = requests[0]
             self.__load_request(user_id, request)
             return True
         return False
@@ -37,7 +37,7 @@ class Controller:
     def load_favorite(self, user_id: int, num: int) -> bool:
         requests = self.__db.get_favorites_requests(user_id, num)
         if len(requests) > 0:
-            request = requests[len(requests) - 1]
+            request = requests[0]
             self.__load_request(user_id, request)
             return True
         return False

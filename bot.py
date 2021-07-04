@@ -2,6 +2,8 @@ from typing import List
 
 import telebot
 from telebot import types
+
+import picture_creator
 from controller import Controller
 from answer import AnswerToUserRouteRequest
 from request import UserRequest
@@ -30,6 +32,7 @@ def command_history(message):
     if len(history) == 0:
         bot.reply_to(message, text='Записи не найдены')
     else:
+        history += '/load_last [Номер записи] - загрузить маршрут из истории'
         bot.reply_to(message, text=history)
 
 
@@ -40,6 +43,7 @@ def command_favourites(message):
     if len(history) == 0:
         bot.reply_to(message, text='Записи не найдены')
     else:
+        history += '/load_favorite [Номер записи] - загрузить маршрут из избранного'
         bot.reply_to(message, text=history)
 
 
@@ -61,7 +65,7 @@ def command_load_last(message):
 
 @bot.message_handler(commands=['load_favorite'])
 def command_load_favorite(message):
-    typed = message.text[13:]
+    typed = message.text[15:]
     number = 0
     try:
         number = int(typed)
@@ -108,7 +112,7 @@ def handle_random_message(message):
 
 
 @bot.callback_query_handler(func=lambda call: True)
-def command_admin_callback(call):
+def handle_callback(call):
     user_id = call.from_user.id
     request = controller.get_current_request(user_id)
     if call.data == 'switch_baggage':
@@ -124,7 +128,8 @@ def command_admin_callback(call):
     if call.data == 'switch_baggage' \
             or call.data == 'switch_planes' \
             or call.data == 'switch_trains' \
-            or call.data == 'switch_buses':
+            or call.data == 'switch_buses'  \
+            or call.data == 'switch_favorites':
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                               text=request_to_string(request),
                               reply_markup=get_route_edit_keyboard())
@@ -148,6 +153,7 @@ def command_admin_callback(call):
         answer = controller.get_answer_to_user_route_request(user_id)
         text = answer_to_string(answer)
         bot.send_message(call.message.chat.id, text)
+        bot.send_message(call.message.chat.id, answer.pic)
     if call.data == 'add_town' \
             or call.data == 'delete_town':
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
@@ -188,7 +194,7 @@ def answer_to_string(answer: AnswerToUserRouteRequest) -> str:
 
 def get_route_edit_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=1)
-    keyboard.add(types.InlineKeyboardButton('Добавить в избранное', callback_data='add_to_favorites'),
+    keyboard.add(types.InlineKeyboardButton('Добавить в избранное', callback_data='switch_favorites'),
                  types.InlineKeyboardButton('Включить/выключить багаж', callback_data='switch_baggage'),
                  types.InlineKeyboardButton('Показать/убрать самолеты', callback_data='switch_planes'),
                  types.InlineKeyboardButton('Показать/убрать поезда', callback_data='switch_trains'),
@@ -242,7 +248,12 @@ def transport_type_to_string(transport_type: TransportType):
 
 def request_to_string(request: UnfinishedRequest) -> str:
     text = ''
-    text += "Виды транспорта: "
+    text += "В избранном: "
+    if request.is_favorite:
+        text += 'Да'
+    else:
+        text += 'Нет'
+    text += "\nВиды транспорта: "
     for transport_type in request.transport_types:
         text += transport_type_to_string(transport_type) + ' '
     text += '\n'
@@ -252,6 +263,7 @@ def request_to_string(request: UnfinishedRequest) -> str:
     else:
         text += 'Без разницы' + '\n'
     i = 1
+    text += 'Список городов: \n'
     for places in request.possible_places_lists:
         text += str(i) + ": "
         for place in places:
@@ -263,19 +275,19 @@ def request_to_string(request: UnfinishedRequest) -> str:
     return text
 
 
+def convert_finished_to_unfinished_request(request: UserRequest):
+    unfinished_request = UnfinishedRequest(request.user_id)
+    unfinished_request.with_baggage = request.with_baggage
+    unfinished_request.possible_places_lists = request.possible_places_lists
+    unfinished_request.transport_types = request.transport_types
+    unfinished_request.is_favorite = request.is_favorite
+    return unfinished_request
+
+
 def requests_to_string(requests: List[UserRequest]) -> str:
     history = ''
     for request in requests:
-        history += 'Id пользователя: ' + str(request.user_id) + '\n' \
-                   'С багажом: '
-        if request.with_baggage:
-            history += 'Да' + '\n'
-        else:
-            history += 'Без разницы' + '\n'
-        history += 'Типы транспорта: ' + str(request.transport_types) + '\n' \
-                   'Списки городов: ' + '\n'
-        for places_list in request.possible_places_lists:
-            history += '- ' + str(places_list) + '\n'
+        history += request_to_string(convert_finished_to_unfinished_request(request)) + '\n'
     if history != '':
         history += '\n'
     return history

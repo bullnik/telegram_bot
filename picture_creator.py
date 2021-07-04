@@ -34,7 +34,7 @@ class PictureCreator:
                 graph.add_edge(pair.departure_town, pair.arrival_town,
                                weight=pair.cost, title=str(pair.cost))
 
-        # хз пригодится оно или нет, но пока тут остается
+         хз пригодится оно или нет, но пока тут остается
         edge_labels = nx.get_edge_attributes(graph, 'title')
         labels_edges = {}
         for route in routes:
