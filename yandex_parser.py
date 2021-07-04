@@ -384,7 +384,11 @@ class YandexParser(RoadParser, ABC):
             for i in ticket_block_cost.text:
                 if i.isdigit():
                     cost += i
-            cost = int(cost)
+            try:
+                cost = int(cost)
+            except ValueError:
+                print("Не удалось получить цену билета")
+                continue
 
             transport_type = TransportType.TRAIN
             try:
