@@ -7,11 +7,17 @@ class UserRequest:
     def __init__(self, user_id: int,
                  possible_places_lists: List[List[PlaceToVisit]],
                  transport_types: List[TransportType],
-                 with_baggage: bool):
+                 with_baggage: bool,
+                 is_favorite: bool = False):
         self.__user_id = user_id
         self.__possible_places_lists = possible_places_lists
         self.__transport_types = transport_types
         self.__with_baggage = with_baggage
+        self.__is_favorite = is_favorite
+
+    @property
+    def is_favorite(self) -> int:
+        return self.__is_favorite
 
     @property
     def user_id(self) -> int:

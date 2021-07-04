@@ -96,7 +96,8 @@ class Database:
             cursor.execute(f"""
                 INSERT INTO Roads (DepartureTown, ArrivalTown, TransportType, DepartureTime,
                                    ArrivalTime, BaggageCost, Cost, Link)
-                SELECT \'{departure_town}\', \'{arrival_town}\', \'{self.__transport_types_to_str([road.transport_type])}\',
+                SELECT \'{departure_town}\', \'{arrival_town}\', 
+                        \'{self.__transport_types_to_str([road.transport_type])}\',
                         \'{str(road.departure_time)[:19]}\', \'{str(road.arrival_time)[:19]}\',
                         {road.baggage_cost}, {road.cost}, \'{link}\'
             """)
@@ -109,12 +110,12 @@ class Database:
         transport = self.__transport_types_to_str(request.transport_types)
         baggage = request.with_baggage
         is_favorite = request.is_favorite
-        output = cursor.execute(f"""
+        cursor.execute(f"""
             INSERT INTO UserRequests (UserId, PossiblePlaces, TransportTypes, WithBaggage, IsFavorite)
             VALUES ({user_id}, \'{places}\', \'{transport}\', \'{baggage}\', \'{is_favorite}\');
         """)
 
-        output = cursor.execute(f"""
+        cursor.execute(f"""
             INSERT INTO UniqueUsers (UserId, DateTime)
             SELECT {user_id}, \'{str(datetime.now())[:16]}\'
             WHERE NOT EXISTS (SELECT 1
@@ -204,7 +205,14 @@ class Database:
             LIMIT {requests_count}
         """)
         requests = cursor.fetchall()
-        return []
+        output = []
+        for request in requests:
+            output.append(UserRequest(user_id=request[0],
+                                      possible_places_lists=self.__str_to_possible_places(request[1]),
+                                      transport_types=self.__str_to_transport_types(request[2]),
+                                      with_baggage=request[3],
+                                      is_favorite=request[4]))
+        return output
 
     def get_unique_users(self, last_days: int) -> List[int]:
         cursor = self.__connection.cursor()
