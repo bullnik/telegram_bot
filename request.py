@@ -8,7 +8,7 @@ class UserRequest:
                  possible_places_lists: List[List[PlaceToVisit]],
                  transport_types: List[TransportType],
                  with_baggage: bool,
-                 is_favorite: bool = False):
+                 is_favorite: bool):
         self.__user_id = user_id
         self.__possible_places_lists = possible_places_lists
         self.__transport_types = transport_types

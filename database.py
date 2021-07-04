@@ -25,7 +25,8 @@ class Database:
                 PossiblePlaces TEXT,
                 TransportTypes TEXT,
                 WithBaggage BOOLEAN,
-                IsFavorite BOOLEAN
+                IsFavorite BOOLEAN,
+                DateTime DATETIME
             );
 
             CREATE TABLE UniqueUsers
@@ -121,8 +122,9 @@ class Database:
         baggage = request.with_baggage
         is_favorite = request.is_favorite
         cursor.execute(f"""
-            INSERT INTO UserRequests (UserId, PossiblePlaces, TransportTypes, WithBaggage, IsFavorite)
-            VALUES ({user_id}, \'{places}\', \'{transport}\', \'{baggage}\', \'{is_favorite}\');
+            INSERT INTO UserRequests (UserId, PossiblePlaces, TransportTypes, WithBaggage, IsFavorite, DateTime)
+            VALUES ({user_id}, \'{places}\', \'{transport}\', \'{baggage}\', \'{is_favorite}\', 
+            \'{str(datetime.now())[0:16]}\');
         """)
 
         cursor.execute(f"""
@@ -184,14 +186,21 @@ class Database:
             possible_places_lists.append(places_list)
         return possible_places_lists
 
+    def __str_to_bool(self, text: str) -> bool:
+        if text == 'False':
+            return False
+        if text == 'True':
+            return True
+
     def get_requests(self, user_id: int, requests_count: int) -> List[UserRequest]:
         connection = sqlite3.connect('database.sqlite')
         cursor = connection.cursor()
         output = []
         cursor.execute(f"""
             SELECT *
-            FROM UserRequests
+            FROM UserRequests 
             WHERE UserId = {user_id}
+            ORDER BY DateTime DESC
             LIMIT {requests_count}
         """)
         requests = cursor.fetchall()
@@ -199,20 +208,21 @@ class Database:
             output.append(UserRequest(user_id=request[0],
                                       possible_places_lists=self.__str_to_possible_places(request[1]),
                                       transport_types=self.__str_to_transport_types(request[2]),
-                                      with_baggage=request[3],
-                                      is_favorite=request[4]))
+                                      with_baggage=self.__str_to_bool(request[3]),
+                                      is_favorite=self.__str_to_bool(request[4])))
         connection.close()
         return output
 
-    def get_favorites_requests(self, user_id: int, requests_count) -> List[UserRequest]:
+    def get_favorites_requests(self, user_id: int, num) -> List[UserRequest]:
         connection = sqlite3.connect('database.sqlite')
         cursor = connection.cursor()
         cursor.execute(f"""
             SELECT *
             FROM UserRequests
             WHERE UserId = {user_id}
-                AND IsFavorite = {True}
-            LIMIT {requests_count}
+                AND IsFavorite = \'True\'
+            ORDER BY DateTime DESC
+            LIMIT {num}
         """)
         requests = cursor.fetchall()
         output = []
@@ -220,8 +230,8 @@ class Database:
             output.append(UserRequest(user_id=request[0],
                                       possible_places_lists=self.__str_to_possible_places(request[1]),
                                       transport_types=self.__str_to_transport_types(request[2]),
-                                      with_baggage=request[3],
-                                      is_favorite=request[4]))
+                                      with_baggage=self.__str_to_bool(request[3]),
+                                      is_favorite=self.__str_to_bool(request[4])))
         connection.close()
         return output
 
