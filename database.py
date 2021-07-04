@@ -14,10 +14,8 @@ class Database:
             database_file.close()
         except IOError:
             self.__create_tables()
-        self.__connection = sqlite3.connect('database.sqlite')
 
-    @staticmethod
-    def __create_tables():
+    def __create_tables(self):
         connection = sqlite3.connect('database.sqlite')
         cursor = connection.cursor()
         cursor.executescript("""
@@ -51,10 +49,18 @@ class Database:
         connection.commit()
         connection.close()
 
+    def __str_to_datetime(self, string: str):
+        return datetime(year=int(string[0:4]),
+                        month=int(string[5:7]),
+                        day=int(string[8:10]),
+                        hour=int(string[11:13]),
+                        minute=int(string[14:16]))
+
     def get_roads(self, departure_town: str, arrival_town: str,
                   transport_types: List[TransportType],
                   min_departure_time: datetime) -> List[Road]:
-        cursor = self.__connection.cursor()
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
         dep = departure_town.replace('\'', '')
         arr = arrival_town.replace('\'', '')
         min_time = str(min_departure_time)[0:19]
@@ -68,7 +74,7 @@ class Database:
                 WHERE DepartureTown = \'{dep}\'
                     AND ArrivalTown = \'{arr}\'
                     AND DepartureTime >= \'{min_time}\'
-                    AND ArrivalTime <= \'{max_time}\'
+                    AND DepartureTime <= \'{max_time}\'
                     AND TransportType = \'{t_type}\'
             """)
             road_fetch = cursor.fetchall()
@@ -80,15 +86,17 @@ class Database:
             output.append(Road(departure_town=road[0],
                                arrival_town=road[1],
                                transport_type=self.__str_to_transport_types(road[2])[0],
-                               departure_time=road[3],
-                               arrival_time=road[4],
+                               departure_time=self.__str_to_datetime(road[3]),
+                               arrival_time=self.__str_to_datetime(road[4]),
                                baggage_cost=road[5],
                                cost=road[6],
                                link=road[7]))
+        connection.close()
         return output
 
     def insert_roads(self, roads: List[Road]):
-        cursor = self.__connection.cursor()
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
         for road in roads:
             link = road.link.replace('\'', '')
             departure_town = road.departure_town.replace('\'', '')
@@ -101,10 +109,12 @@ class Database:
                         \'{str(road.departure_time)[:19]}\', \'{str(road.arrival_time)[:19]}\',
                         {road.baggage_cost}, {road.cost}, \'{link}\'
             """)
-        self.__connection.commit()
+        connection.commit()
+        connection.close()
 
     def insert_request(self, request: UserRequest):
-        cursor = self.__connection.cursor()
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
         user_id = request.user_id
         places = self.__possible_places_to_str(request.possible_places_lists)
         transport = self.__transport_types_to_str(request.transport_types)
@@ -122,10 +132,10 @@ class Database:
                               FROM UniqueUsers 
                               WHERE UserId = \'{user_id}\');
         """)
-        self.__connection.commit()
+        connection.commit()
+        connection.close()
 
-    @staticmethod
-    def __transport_types_to_str(transport_types: List[TransportType]) -> str:
+    def __transport_types_to_str(self, transport_types: List[TransportType]) -> str:
         text = ''
         for transport_type in transport_types:
             if transport_type == TransportType.TRAIN:
@@ -137,8 +147,7 @@ class Database:
         text = text[:-1]
         return text
 
-    @staticmethod
-    def __str_to_transport_types(text: str) -> List[TransportType]:
+    def __str_to_transport_types(self, text: str) -> List[TransportType]:
         transport_types = []
         for transport_type in text.split():
             if transport_type == 'TRAIN':
@@ -149,8 +158,7 @@ class Database:
                 transport_types.append(TransportType.PLANE)
         return transport_types
 
-    @staticmethod
-    def __possible_places_to_str(possible_places_lists: List[List[PlaceToVisit]]):
+    def __possible_places_to_str(self, possible_places_lists: List[List[PlaceToVisit]]):
         text = ''
         for places_list in possible_places_lists:
             for place in places_list:
@@ -161,8 +169,7 @@ class Database:
         text = text[:-2]
         return text
 
-    @staticmethod
-    def __str_to_possible_places(text: str) -> List[List[PlaceToVisit]]:
+    def __str_to_possible_places(self, text: str) -> List[List[PlaceToVisit]]:
         possible_places_lists = []
         for places_list_part in text.split('%'):
             places_list = []
@@ -178,7 +185,8 @@ class Database:
         return possible_places_lists
 
     def get_requests(self, user_id: int, requests_count: int) -> List[UserRequest]:
-        cursor = self.__connection.cursor()
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
         output = []
         cursor.execute(f"""
             SELECT *
@@ -193,10 +201,12 @@ class Database:
                                       transport_types=self.__str_to_transport_types(request[2]),
                                       with_baggage=request[3],
                                       is_favorite=request[4]))
+        connection.close()
         return output
 
     def get_favorites_requests(self, user_id: int, requests_count) -> List[UserRequest]:
-        cursor = self.__connection.cursor()
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
         cursor.execute(f"""
             SELECT *
             FROM UserRequests
@@ -212,10 +222,12 @@ class Database:
                                       transport_types=self.__str_to_transport_types(request[2]),
                                       with_baggage=request[3],
                                       is_favorite=request[4]))
+        connection.close()
         return output
 
     def get_unique_users(self, last_days: int) -> List[int]:
-        cursor = self.__connection.cursor()
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
         unique_users = []
         for last_day in range(0, last_days + 1, 1):
             min_date = str(datetime.now() - timedelta(days=last_day + 1))[0:19]
@@ -228,4 +240,5 @@ class Database:
             """)
             a = cursor.fetchall()
             unique_users.append(a[0])
+        connection.close()
         return unique_users
