@@ -4,7 +4,7 @@ from abc import ABC
 from road_parser import *
 from road import *
 from selenium import webdriver
-import selenium.common.exceptions
+import selenium.common.exceptions as ex
 from selenium.webdriver.common.keys import Keys
 import settings
 
@@ -49,12 +49,20 @@ class TutuParser(RoadParser, ABC):
         driver.get("https://avia.tutu.ru/")
 
         time.sleep(1)
-        departure = driver.find_element_by_xpath("//input[@class='o33560 o33576']")
+        try:
+            departure = driver.find_element_by_xpath("//input[@class='o33560 o33576']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Откуда')
+            return []
         print(departure)  # проверка
         departure.send_keys(departure_town)
 
         time.sleep(1)
-        arrival = driver.find_element_by_xpath("//input[@class='o33560 o33641']")
+        try:
+            arrival = driver.find_element_by_xpath("//input[@class='o33560 o33641']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Куда')
+            return []
         print(arrival)  # для проверки что всё норм в консоль пишется элемент
         arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
 
@@ -62,23 +70,24 @@ class TutuParser(RoadParser, ABC):
         print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
         print("Куда: " + arrival.get_attribute('value'))  #
 
-        date_block = driver.find_element_by_xpath("//input[@class='o33560 o33663 o33658 o33659']")
+        try:
+            date_block = driver.find_element_by_xpath("//input[@class='o33560 o33663 o33658 o33659']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода даты')
+            return []
         print(date_block)
         date_block.send_keys(min_departure_time.strftime('%d.%m.%Y'))
         time.sleep(1)
 
-        search_button = driver.find_element_by_xpath("//button[@class='order-group-element o33688 o33693 o33695']")
+        try:
+            search_button = driver.find_element_by_xpath("//button[@class='order-group-element o33688 o33693 o33695']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти кнопку поиска")
+            return []
         search_button.click()
 
         time.sleep(1)
-
-        found_tickets_count = int(driver.find_element_by_xpath("//span[@class='o33124 o338 o3330 o3363']")
-                                  .find_elements_by_xpath(".//*")[0]
-                                  .find_elements_by_xpath(".//*")[0]
-                                  .text.split(' ')[0])
-        max_for_parsing = found_tickets_count \
-            if found_tickets_count <= SETTINGS.get_max_count_parsed_roads() \
-            else SETTINGS.get_max_count_parsed_roads()
+        max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
         i = 0
@@ -86,7 +95,14 @@ class TutuParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath("//div[@class='_3myc0zS07d6p2suflgjuDQ']")
+            try:
+                tickets = driver.find_elements_by_xpath("//div[@class='_3myc0zS07d6p2suflgjuDQ']")
+            except ex.NoSuchElementException:
+                print("Не удалось найти билеты")
+                return []
+            if i == len(tickets):
+                max_for_parsing = i
+                break
             i = len(tickets)
             print('значение i: ' + str(i))
             print('значение max_for_parsing: ' + str(max_for_parsing))
@@ -97,10 +113,22 @@ class TutuParser(RoadParser, ABC):
 
         roads = []
         for j in range(0, max_for_parsing):
-            if tickets[j].find_element_by_xpath(".//span[@data-ti='route_main_line']").text != 'Прямой':
+            try:
+                route_type = tickets[j].find_element_by_xpath(".//span[@data-ti='route_main_line']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить тип билета")
+                continue
+            if route_type.text != 'Прямой':
                 continue
             transport_type = TransportType.PLANE
-            tickets_times = tickets[j].find_elements_by_xpath(".//span[@class='o33733']")
+            try:
+                tickets_times = tickets[j].find_elements_by_xpath(".//span[@class='o33733']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить время")
+                continue
+            if len(tickets_times) < 2:
+                print("Не удалось распарсить время")
+                continue
             ticket_departure_time = tickets_times[0].text.split(':')
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
@@ -132,7 +160,12 @@ class TutuParser(RoadParser, ABC):
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
             cost = ''
-            for i in str(tickets[j].find_element_by_xpath(".//span[@data-ti='price']").text):
+            try:
+                cost_block = tickets[j].find_element_by_xpath(".//span[@data-ti='price']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
@@ -167,13 +200,21 @@ class TutuParser(RoadParser, ABC):
         driver.get("https://www.tutu.ru/poezda/")
 
         time.sleep(1)
-        departure = driver.find_element_by_xpath(
-            "//input[@class='input_field j-station_input  j-station_input_from']")
+        try:
+            departure = driver.find_element_by_xpath(
+                "//input[@class='input_field j-station_input  j-station_input_from']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Откуда')
+            return []
         print(departure)  # проверка
         departure.send_keys(departure_town)
 
         time.sleep(1)
-        arrival = driver.find_element_by_xpath("//input[@class='input_field j-station_input  j-station_input_to']")
+        try:
+            arrival = driver.find_element_by_xpath("//input[@class='input_field j-station_input  j-station_input_to']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Куда')
+            return []
         print(arrival)  # для проверки что всё норм в консоль пишется элемент
         arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
 
@@ -181,14 +222,22 @@ class TutuParser(RoadParser, ABC):
         print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
         print("Куда: " + arrival.get_attribute('value'))  #
 
-        date_block = driver.find_element_by_xpath(
-            "//input[@class='input_field j-permanent_open j-input j-date_to']")
+        try:
+            date_block = driver.find_element_by_xpath(
+                "//input[@class='input_field j-permanent_open j-input j-date_to']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода даты')
+            return []
         print(date_block)
         date_block.send_keys(min_departure_time.strftime('%d.%m.%Y'))
         time.sleep(1)
 
-        search_button = driver.find_element_by_xpath(
-            "//button[@class='b-button__arrow__button j-button j-button-submit _title j-submit_button _blue']")
+        try:
+            search_button = driver.find_element_by_xpath(
+                "//button[@class='b-button__arrow__button j-button j-button-submit _title j-submit_button _blue']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти кнопку поиска")
+            return []
         search_button.click()
 
         time.sleep(5)
@@ -196,7 +245,7 @@ class TutuParser(RoadParser, ABC):
         try:
             driver.find_element_by_xpath("//div[@id='root']")
             page1 = True
-        except selenium.common.exceptions.NoSuchElementException:
+        except ex.NoSuchElementException:
             page1 = False
 
         if page1:
@@ -217,8 +266,12 @@ class TutuParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath(
-                "//div[@class='_151K-8IAD-lVBcM9v84fje']")
+            try:
+                tickets = driver.find_elements_by_xpath(
+                    "//div[@class='_151K-8IAD-lVBcM9v84fje']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить билеты")
+                return []
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -233,7 +286,11 @@ class TutuParser(RoadParser, ABC):
         roads = []
         for j in range(0, max_for_parsing):
             transport_type = TransportType.TRAIN
-            tickets_times = tickets[j].find_elements_by_xpath(".//span[@data-ti='stopover-time']")
+            try:
+                tickets_times = tickets[j].find_elements_by_xpath(".//span[@data-ti='stopover-time']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить время")
+                continue
             ticket_departure_time = tickets_times[0].text.split(':')
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
@@ -246,8 +303,12 @@ class TutuParser(RoadParser, ABC):
 
             ticket_arrival_time = tickets_times[1].text.split(':')
 
-            arrival_day = tickets[j].find_elements_by_xpath(".//span[@data-ti='stopover-date']")[1].text.split(' ')[
-                0]
+            try:
+                arrival_day = int(tickets[j].find_elements_by_xpath(
+                    ".//span[@data-ti='stopover-date']")[1].text.split(' ')[0])
+            except ex.NoSuchElementException:
+                print("Не удалось получить день приезда")
+                continue
             arrival_month = min_departure_time.month
             if arrival_day < departure_time.day:
                 arrival_month = min_departure_time.month + 1
@@ -264,7 +325,12 @@ class TutuParser(RoadParser, ABC):
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
             cost = ''
-            for i in str(tickets[j].find_element_by_xpath(".//span[@data-ti='price']").text):
+            try:
+                cost_block = tickets[j].find_element_by_xpath(".//span[@data-ti='price']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
@@ -304,8 +370,12 @@ class TutuParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath(
-                "//div[@class='notable__trainCardWrapper__178UB']")
+            try:
+                tickets = driver.find_elements_by_xpath(
+                    "//div[@class='notable__trainCardWrapper__178UB']")
+            except ex.NoSuchElementException:
+                print("Не удалось найти билеты")
+                return []
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -314,14 +384,17 @@ class TutuParser(RoadParser, ABC):
             print('значение max_for_parsing: ' + str(max_for_parsing))
             print('Бесконечный цикл?')
 
-        print("Билетов всего: " + str(len(tickets)))
         print("Будем парсить: " + str(max_for_parsing))
 
         roads = []
         for j in range(0, max_for_parsing):
             transport_type = TransportType.TRAIN
-            ticket_departure_time = tickets[j].find_element_by_xpath(".//div[@class='departure_time']").text.split(
-                ':')
+            try:
+                ticket_departure_time = tickets[j].find_element_by_xpath(
+                    ".//div[@class='departure_time']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось получить время выезда")
+                continue
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
                                         min_departure_time.month,
@@ -331,8 +404,12 @@ class TutuParser(RoadParser, ABC):
                                         '00')
             departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
 
-            ticket_arrival_time = tickets[j].find_element_by_xpath(".//span[@class='schedule_time']").text.split(
-                ':')
+            try:
+                ticket_arrival_time = tickets[j].find_element_by_xpath(
+                    ".//span[@class='schedule_time']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось получить время приезда")
+                continue
             arrival_day = min_departure_time.day
             # часы приезда < часы выезда => прибыл в следующий день
             if int(ticket_arrival_time[0]) < int(
@@ -341,7 +418,12 @@ class TutuParser(RoadParser, ABC):
             elif int(ticket_arrival_time[0]) == int(ticket_departure_time[0]):  # часы равны
                 if int(ticket_arrival_time[1]) < int(ticket_departure_time[1]):  # проверяем минуты
                     arrival_day = min_departure_time.day + 1
-            days_in_way = tickets[j].find_element_by_xpath(".//span[@class='t-txt-s route_time']").text.split(' ')
+            try:
+                days_in_way = tickets[j].find_element_by_xpath(
+                    ".//span[@class='t-txt-s route_time']").text.split(' ')
+            except ex.NoSuchElementException:
+                print("Не удалось получить количество дней в пути")
+                continue
             if days_in_way[1] == 'д.':
                 arrival_day += int(days_in_way[0])
             arrival_month = min_departure_time.month
@@ -360,16 +442,24 @@ class TutuParser(RoadParser, ABC):
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
             cost = ''
-            cost_block = tickets[j].find_element_by_xpath(
-                ".//div[@class='column card_categories']").find_element_by_xpath(
-                ".//*").find_elements_by_xpath(".//*")[-1].text
-            for i in str(cost_block):
+            try:
+                cost_block = tickets[j].find_element_by_xpath(
+                    ".//div[@class='column card_categories']").find_element_by_xpath(
+                    ".//*").find_elements_by_xpath(".//*")[-1]
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
 
-            link = tickets[j].find_element_by_xpath(
-                ".//a[@class='top_bottom_prices_wrapper top_bottom_prices_wrapper__link']").get_attribute('href')
+            try:
+                link = tickets[j].find_element_by_xpath(
+                    ".//a[@class='top_bottom_prices_wrapper top_bottom_prices_wrapper__link']").get_attribute('href')
+            except ex.NoSuchElementException:
+                print("Не удалось получить ссылку")
+                link = driver.current_url
             baggage_cost = 0
 
             print('transport_type: ' + 'TRAIN')
@@ -399,12 +489,20 @@ class TutuParser(RoadParser, ABC):
         driver.get("https://bus.tutu.ru/")
 
         time.sleep(1)
-        departure = driver.find_element_by_xpath("//input[@placeholder='Откуда']")
+        try:
+            departure = driver.find_element_by_xpath("//input[@placeholder='Откуда']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Откуда')
+            return []
         print(departure)  # проверка
         departure.send_keys(departure_town)
 
         time.sleep(1)
-        arrival = driver.find_element_by_xpath("//input[@placeholder='Куда']")
+        try:
+            arrival = driver.find_element_by_xpath("//input[@placeholder='Куда']")
+        except ex.NoSuchElementException:
+            print('Не удалось найти поле ввода Куда')
+            return []
         print(arrival)  # для проверки что всё норм в консоль пишется элемент
         arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
 
@@ -412,14 +510,22 @@ class TutuParser(RoadParser, ABC):
         print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
         print("Куда: " + arrival.get_attribute('value'))  #
 
-        date_block = driver.find_element_by_xpath("//input[@placeholder='Дата']")
+        try:
+            date_block = driver.find_element_by_xpath("//input[@placeholder='Дата']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти поле ввода даты")
+            return []
         print(date_block)
         for i in range(0, 15):
             date_block.send_keys(Keys.BACKSPACE)
         date_block.send_keys(min_departure_time.strftime('%d.%m.%Y'))
         time.sleep(1)
 
-        search_button = driver.find_element_by_xpath("//button[@class='order-group-element o3338 o3343 o3345']")
+        try:
+            search_button = driver.find_element_by_xpath("//button[@class='order-group-element o3338 o3343 o3345']")
+        except ex.NoSuchElementException:
+            print("Не удалось найти кнопку поиска")
+            return []
         search_button.click()
 
         # Если не перешло на новую страницу - то выходим
@@ -431,13 +537,17 @@ class TutuParser(RoadParser, ABC):
             time.sleep(1)
             wait_time += 1
 
-        time.sleep(8)
-        div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
+        time.sleep(10)
+        try:
+            div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
+        except ex.NoSuchElementException:
+            print("Не удалось получить билеты")
+            return []
 
         try:
             div_element.find_element_by_xpath(".//tbody[@itemprop='offers']")
             page1 = True
-        except selenium.common.exceptions.NoSuchElementException:
+        except ex.NoSuchElementException:
             page1 = False
 
         if page1:
@@ -458,8 +568,12 @@ class TutuParser(RoadParser, ABC):
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets = driver.find_elements_by_xpath(
-                "//tr[@class='index__row___3rPq4 index__opened_row_desktop___ZZ3_E']")
+            try:
+                tickets = driver.find_elements_by_xpath(
+                    "//tr[@class='index__row___3rPq4 index__opened_row_desktop___ZZ3_E']")
+            except ex.NoSuchElementException:
+                print("Не удалось найти билеты")
+                return []
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -474,8 +588,12 @@ class TutuParser(RoadParser, ABC):
         roads = []
         for j in range(0, max_for_parsing):
             transport_type = TransportType.BUS
-            ticket_departure_time = tickets[j].find_element_by_xpath(
-                ".//td[@class='index__departure___16vG_']").text.split(':')
+            try:
+                ticket_departure_time = tickets[j].find_element_by_xpath(
+                    ".//td[@class='index__departure___16vG_']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось найти время выезда")
+                continue
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
                                         min_departure_time.month,
@@ -485,9 +603,12 @@ class TutuParser(RoadParser, ABC):
                                         '00')
             departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
 
-            ticket_arrival_time = tickets[j].find_element_by_xpath(
-                ".//td[@class='index__arrival___33ybQ']").text.split(':')
-
+            try:
+                ticket_arrival_time = tickets[j].find_element_by_xpath(
+                    ".//td[@class='index__arrival___33ybQ']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось найти время приезда")
+                continue
             arrival_day = min_departure_time.day
             if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
                 arrival_day = min_departure_time.day + 1
@@ -507,9 +628,13 @@ class TutuParser(RoadParser, ABC):
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
             cost = ''
-            cost_block = tickets[j].find_element_by_xpath(
-                ".//td[@class='index__buy___2rAq9 index__not_for_sale___3RyM0 index__no_offers_for_sale___1FI53']").text
-            for i in str(cost_block):
+            try:
+                cost_block = tickets[j].find_element_by_xpath(
+                    ".//td[@class='index__buy___2rAq9 index__not_for_sale___3RyM0 index__no_offers_for_sale___1FI53']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену")
+                continue
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
@@ -545,13 +670,20 @@ class TutuParser(RoadParser, ABC):
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
         i = 1
-        tickets += driver.find_elements_by_xpath(
-            "//div[@class='index__offer___1pMh_ index__hover___2AZR1 index__cheapest___29juA']")
+        try:
+            tickets += driver.find_elements_by_xpath(
+                "//div[@class='index__offer___1pMh_ index__hover___2AZR1 index__cheapest___29juA']")
+        except ex.NoSuchElementException:
+            print("Не удалось получить самый дешёвый билет")
         while i < max_for_parsing:
             for step in range(0, SCROLL_DOWN_STEPS_COUNT):
                 driver.execute_script("window.scrollTo(0, document.body.scrollHeight)")
                 time.sleep(0.5)
-            tickets += driver.find_elements_by_xpath("//div[@class='index__offer___1pMh_']")
+            try:
+                tickets += driver.find_elements_by_xpath("//div[@class='index__offer___1pMh_']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить билеты")
+                return []
             if i == len(tickets):
                 max_for_parsing = i
                 break
@@ -566,8 +698,12 @@ class TutuParser(RoadParser, ABC):
         roads = []
         for j in range(0, max_for_parsing):
             transport_type = TransportType.BUS
-            ticket_departure_time = tickets[j].find_element_by_xpath(
-                ".//span[@class='index__departure_time___j_JX4']").text.split(':')
+            try:
+                ticket_departure_time = tickets[j].find_element_by_xpath(
+                    ".//span[@class='index__departure_time___j_JX4']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось получить время выезда")
+                continue
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
                                         min_departure_time.year,
                                         min_departure_time.month,
@@ -576,10 +712,12 @@ class TutuParser(RoadParser, ABC):
                                         ticket_departure_time[1],
                                         '00')
             departure_time = datetime.strptime(departure_time, '%Y-%m-%d %H:%M:%S')
-
-            ticket_arrival_time = tickets[j].find_element_by_xpath(
-                ".//span[@class='index__arrival_time___161Ry']").text.split(':')
-
+            try:
+                ticket_arrival_time = tickets[j].find_element_by_xpath(
+                    ".//span[@class='index__arrival_time___161Ry']").text.split(':')
+            except ex.NoSuchElementException:
+                print("Не удалось получить время приезда")
+                continue
             arrival_day = min_departure_time.day
             if int(ticket_arrival_time[0]) <= int(ticket_departure_time[0]):
                 arrival_day = min_departure_time.day + 1
@@ -599,8 +737,12 @@ class TutuParser(RoadParser, ABC):
             arrival_time = datetime.strptime(arrival_time, '%Y-%m-%d %H:%M:%S')
 
             cost = ''
-            for i in str(tickets[j].find_element_by_xpath(
-                    ".//div[@class='index__default_price___2in_N']").text):
+            try:
+                cost_block = tickets[j].find_element_by_xpath(".//div[@class='index__default_price___2in_N']")
+            except ex.NoSuchElementException:
+                print("Не удалось получить цену билета")
+                continue
+            for i in str(cost_block.text):
                 if i.isdigit():
                     cost += i
             cost = int(cost)
