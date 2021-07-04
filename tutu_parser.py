@@ -18,23 +18,24 @@ def parse_avia_tickets(departure_town: str, arrival_town: str, min_departure_tim
     driver.set_window_size(1500, 1000)
     driver.get("https://avia.tutu.ru/")
 
+    time.sleep(1)
     departure = driver.find_element_by_xpath("//input[@class='o33560 o33576']")
     print(departure)  # проверка
     departure.send_keys(departure_town)
-    time.sleep(1)
 
+    time.sleep(1)
     arrival = driver.find_element_by_xpath("//input[@class='o33560 o33641']")
     print(arrival)  # для проверки что всё норм в консоль пишется элемент
     arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
-    time.sleep(1)
 
+    time.sleep(1)
     print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
     print("Куда: " + arrival.get_attribute('value'))  #
 
     date_block = driver.find_element_by_xpath("//input[@class='o33560 o33663 o33658 o33659']")
     print(date_block)
     date_block.send_keys(min_departure_time.strftime('%d.%m.%Y'))
-    time.sleep(0.3)
+    time.sleep(1)
 
     search_button = driver.find_element_by_xpath("//button[@class='order-group-element o33688 o33693 o33695']")
     search_button.click()
@@ -136,16 +137,17 @@ def parse_train_tickets(departure_town: str, arrival_town: str, min_departure_ti
     driver.set_window_size(1500, 1000)
     driver.get("https://www.tutu.ru/poezda/")
 
+    time.sleep(1)
     departure = driver.find_element_by_xpath("//input[@class='input_field j-station_input  j-station_input_from']")
     print(departure)  # проверка
     departure.send_keys(departure_town)
-    time.sleep(1)
 
+    time.sleep(1)
     arrival = driver.find_element_by_xpath("//input[@class='input_field j-station_input  j-station_input_to']")
     print(arrival)  # для проверки что всё норм в консоль пишется элемент
     arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
-    time.sleep(1)
 
+    time.sleep(1)
     print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
     print("Куда: " + arrival.get_attribute('value'))  #
 
@@ -361,16 +363,17 @@ def parse_buses_tickets(departure_town: str, arrival_town: str, min_departure_ti
     driver.set_window_size(1500, 1000)
     driver.get("https://bus.tutu.ru/")
 
+    time.sleep(1)
     departure = driver.find_element_by_xpath("//input[@placeholder='Откуда']")
     print(departure)  # проверка
     departure.send_keys(departure_town)
-    time.sleep(1)
 
+    time.sleep(1)
     arrival = driver.find_element_by_xpath("//input[@placeholder='Куда']")
     print(arrival)  # для проверки что всё норм в консоль пишется элемент
     arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
-    time.sleep(1)
 
+    time.sleep(1)
     print("Откуда: " + departure.get_attribute('value'))  # Проверяю что всё правильно подставилось в поля
     print("Куда: " + arrival.get_attribute('value'))  #
 
@@ -615,6 +618,6 @@ class TutuParser(RoadParser, ABC):
         elif transport_type == TransportType.TRAIN:
             return True
         elif transport_type == TransportType.BUS:
-            return False
+            return True
         else:
             raise NotImplemented()

@@ -27,10 +27,12 @@ def data_entry_for_search(driver: webdriver,
     driver.set_window_size(1500, 1000)
     driver.get(str.format("https://travel.yandex.ru/{0}/", transport_type))  # какой сайт запускает
 
+    time.sleep(1)
     clear_button = driver.find_element_by_class_name('_1-YdI')  # это кнопка чтоб удалить содержимое текстового поля
     clear_button.click()  # чистим поле чтоб ввести свой город
 
     # Ищется первое поле с городом Откуда
+    time.sleep(1)
     departure = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']")
     print(departure)  # проверка
     departure.send_keys(departure_town)  # тут будет подставляться город Откуда
@@ -54,6 +56,7 @@ def data_entry_for_search(driver: webdriver,
     departure_dropbox_element.click()
 
     # Ищется поле с городом Куда (у прошлого элемента класс поменялся, поэтому это пашет)
+    time.sleep(1)
     arrival = driver.find_element_by_xpath("//input[@class='_3bl6g input_center']")
     print(arrival)  # для проверки что всё норм в консоль пишется элемент
     arrival.send_keys(arrival_town)  # тут будет подставляться город Куда
