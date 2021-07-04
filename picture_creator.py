@@ -15,7 +15,7 @@ class PictureCreator:
         # 1) города (possible_places_lists) с подписанными названиями
         # 2) проложены между ними пути (routes - это список путей от начального
         # города до конечного)
-        # 3) жирным выделен самый дешевый путь (low_cost_route)
+        # 3) жирным выделен самый дешевый путь (low_cost_route) (font_weight=bold)
         # хорошо, если цвета путей будут разными для разных типов транспорта
         # картинка должна сохраняться в папке pictures в проекте, а метод
         # возвращает путь к ней
@@ -34,8 +34,6 @@ class PictureCreator:
                 graph.add_edge(pair.departure_town, pair.arrival_town,
                                weight=pair.cost, title=str(pair.cost))
 
-        # хз пригодится оно или нет, но пока тут остается
-        edge_labels = nx.get_edge_attributes(graph, 'title')
         labels_edges = {}
         for route in routes:
             for pair in route:
@@ -53,17 +51,19 @@ class PictureCreator:
                          alpha=0.9,
                          arrows=True)
 
+        nx.draw_networkx_labels(graph, pos, labels={node: node for node in graph.nodes()})
         nx.draw_networkx_edge_labels(graph, pos,
                                      edge_labels=labels_edges,
                                      font_color='red',
                                      label_pos=0.75)
 
-        name_fig = {'fig1.jpg', 'fig2.jpg', 'fig3.jpg', 'fig4.jpg'}
+        possible_name_fig = {'fig1.jpg', 'fig2.jpg', 'fig3.jpg', 'fig4.jpg'}
+        name_fig = random.choice(possible_name_fig)
 
         plt.axis('off')
-        plt.savefig(random.choice(name_fig))
+        plt.savefig(name_fig)
 
-        return ''
+        return name_fig
 
     @staticmethod
     def create_chart(stats: List[int]) -> str:
@@ -71,4 +71,16 @@ class PictureCreator:
         # лист - количество пользователей по последние дни
         # stats[0] - сегодня, stats[1] - вчера и т.д.
 
-        return ''
+        stats_by_date = stats[::-1]
+        abscissa = List[int]
+
+        for i in range(len(stats)):
+            abscissa.append(i)
+
+        plt.figure(figsize=(12, 7))
+
+        plt.plot(stats_by_date, abscissa, 'o-r', alpha=0.7, lw=5, mec='b', mew=2, ms=10)
+        plt.grid(True)
+        plt.savefig('chart.jpg')
+
+        return 'chart.jpg'
