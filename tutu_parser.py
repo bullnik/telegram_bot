@@ -538,7 +538,11 @@ class TutuParser(RoadParser, ABC):
             wait_time += 1
 
         time.sleep(10)
-        div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
+        try:
+            div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
+        except ex.NoSuchElementException:
+            print("Не удалось получить билеты")
+            return []
 
         try:
             div_element.find_element_by_xpath(".//tbody[@itemprop='offers']")
