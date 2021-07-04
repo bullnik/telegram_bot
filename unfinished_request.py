@@ -6,12 +6,14 @@ class UnfinishedRequest:
     with_baggage = False
     possible_places_lists = None
     transport_types = None
+    is_favorite = False
 
     def __init__(self, user_id):
         self.__user_id = user_id
         self.possible_places_lists = [[]]
         self.transport_types = [TransportType.TRAIN, TransportType.BUS, TransportType.PLANE]
         self.with_baggage = False
+        self.is_favorite = False
 
     @property
     def user_id(self):
@@ -65,6 +67,9 @@ class UnfinishedRequest:
         if is_town_deleted:
             return True
         return False
+
+    def switch_favorite(self):
+        self.is_favorite = not self.is_favorite
 
     def switch_train(self):
         try:

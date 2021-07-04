@@ -17,15 +17,40 @@ class Controller:
         self.__route_creator = route_creator.RouteCreator()
         self.__settings = Settings()
 
+    def __load_request(self, user_id, request):
+        self.clear_user_request(user_id)
+        unfinished_request = UnfinishedRequest(user_id)
+        unfinished_request.with_baggage = request.with_baggage
+        unfinished_request.possible_places_lists = request.possible_places_lists
+        unfinished_request.transport_types = request.transport_types
+        unfinished_request.transport_types = request.is_favorite
+        self.__unfinished_requests.append(unfinished_request)
+
+    def load_last(self, user_id: int, num: int) -> bool:
+        requests = self.__db.get_requests(user_id, num)
+        if len(requests) > 0:
+            request = requests[len(requests) - 1]
+            self.__load_request(user_id, request)
+            return True
+        return False
+
+    def load_favorite(self, user_id: int, num: int) -> bool:
+        requests = self.__db.get_favorites_requests(user_id, num)
+        if len(requests) > 0:
+            request = requests[len(requests) - 1]
+            self.__load_request(user_id, request)
+            return True
+        return False
+
     def get_answer_to_user_route_request(self, user_id: int) -> AnswerToUserRouteRequest:
         user_request = self.get_current_request(user_id)
+        self.__db.insert_request(self.convert_to_finish_request(self.get_current_request(user_id)))
         routes = self.__route_creator.create_routes(user_request.possible_places_lists,
                                                     user_request.transport_types,
                                                     user_request.with_baggage)
         low_cost_route = self.__route_creator.get_low_cost_route(routes, user_request.with_baggage)
         answer = AnswerToUserRouteRequest(user_request.possible_places_lists,
                                           routes, low_cost_route)
-        self.__db.insert_request(self.convert_to_finish_request(self.get_current_request(user_id)))
         self.clear_user_request(user_id)
         return answer
 
@@ -39,7 +64,8 @@ class Controller:
         finish_request = UserRequest(request.user_id,
                                      request.possible_places_lists,
                                      request.transport_types,
-                                     request.with_baggage)
+                                     request.with_baggage,
+                                     request.is_favorite)
         return finish_request
 
     def get_current_request(self, user_id: int) -> UnfinishedRequest:
