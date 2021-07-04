@@ -43,6 +43,38 @@ def command_favourites(message):
         bot.reply_to(message, text=history)
 
 
+@bot.message_handler(commands=['load_last'])
+def command_load_last(message):
+    typed = message.text[11:]
+    number = 0
+    try:
+        number = int(typed)
+    except ValueError:
+        if typed != '':
+            bot.reply_to(message, text='Некорректные данные')
+            return
+    if not controller.load_last(message.from_user.id, number):
+        bot.reply_to(message, text='Некорректные данные')
+        return
+    command_route(message)
+
+
+@bot.message_handler(commands=['load_favorite'])
+def command_load_favorite(message):
+    typed = message.text[13:]
+    number = 0
+    try:
+        number = int(typed)
+    except ValueError:
+        if typed != '':
+            bot.reply_to(message, text='Некорректные данные')
+            return
+    if not controller.load_favorite(message.from_user.id, number):
+        bot.reply_to(message, text='Некорректные данные')
+        return
+    command_route(message)
+
+
 @bot.message_handler(commands=['route'])
 def command_route(message):
     request = controller.get_current_request(message.from_user.id)
@@ -87,6 +119,8 @@ def command_admin_callback(call):
         request.switch_train()
     if call.data == 'switch_buses':
         request.switch_bus()
+    if call.data == 'switch_favorites':
+        request.switch_favorite()
     if call.data == 'switch_baggage' \
             or call.data == 'switch_planes' \
             or call.data == 'switch_trains' \
@@ -154,7 +188,8 @@ def answer_to_string(answer: AnswerToUserRouteRequest) -> str:
 
 def get_route_edit_keyboard():
     keyboard = types.InlineKeyboardMarkup(row_width=1)
-    keyboard.add(types.InlineKeyboardButton('Включить/выключить багаж', callback_data='switch_baggage'),
+    keyboard.add(types.InlineKeyboardButton('Добавить в избранное', callback_data='add_to_favorites'),
+                 types.InlineKeyboardButton('Включить/выключить багаж', callback_data='switch_baggage'),
                  types.InlineKeyboardButton('Показать/убрать самолеты', callback_data='switch_planes'),
                  types.InlineKeyboardButton('Показать/убрать поезда', callback_data='switch_trains'),
                  types.InlineKeyboardButton('Показать/убрать автобусы', callback_data='switch_buses'),
@@ -207,7 +242,6 @@ def transport_type_to_string(transport_type: TransportType):
 
 def request_to_string(request: UnfinishedRequest) -> str:
     text = ''
-    # text += "Id пользователя: " + str(request.user_id) + '\n'
     text += "Виды транспорта: "
     for transport_type in request.transport_types:
         text += transport_type_to_string(transport_type) + ' '
@@ -242,6 +276,8 @@ def requests_to_string(requests: List[UserRequest]) -> str:
                    'Списки городов: ' + '\n'
         for places_list in request.possible_places_lists:
             history += '- ' + str(places_list) + '\n'
+    if history != '':
+        history += '\n'
     return history
 
 
