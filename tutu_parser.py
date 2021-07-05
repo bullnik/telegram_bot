@@ -251,7 +251,6 @@ class TutuParser(RoadParser, ABC):
                 page1 = True
                 break
             except ex.NoSuchElementException:
-                page1 = False
                 wait += 1
 
         if page1:
