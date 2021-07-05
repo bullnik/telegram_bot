@@ -72,14 +72,14 @@ class PictureCreator:
         # stats[0] - сегодня, stats[1] - вчера и т.д.
 
         stats_by_date = stats[::-1]
-        abscissa = List[int]
+        abscissa = list()
 
         for i in range(len(stats)):
             abscissa.append(i)
 
         plt.figure(figsize=(12, 7))
 
-        plt.plot(stats_by_date, abscissa, 'o-r', alpha=0.7, lw=5, mec='b', mew=2, ms=10)
+        plt.plot(abscissa, stats_by_date, 'o-r', alpha=0.7, lw=5, mec='b', mew=2, ms=10)
         plt.grid(True)
         plt.savefig('chart.jpg')
 
