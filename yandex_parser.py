@@ -182,7 +182,7 @@ class YandexParser(RoadParser, ABC):
         except ex.NoSuchElementException:
             return True
 
-    def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(executable_path=CHROME_EXE_PATH)  # собстна сам драйвер
         search_result = self.data_entry_for_search(driver=driver,
                                                    departure_town=departure_town,
@@ -328,7 +328,7 @@ class YandexParser(RoadParser, ABC):
         driver.quit()
         return roads
 
-    def parse_train_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_train_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(executable_path=CHROME_EXE_PATH)  # собстна сам драйвер
         search_result = self.data_entry_for_search(driver=driver,
                                                    departure_town=departure_town,
@@ -470,7 +470,7 @@ class YandexParser(RoadParser, ABC):
         driver.quit()
         return roads
 
-    def parse_buses_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_buses_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(executable_path=CHROME_EXE_PATH)  # собстна сам драйвер
         search_result = self.data_entry_for_search(driver=driver,
                                                    departure_town=departure_town,

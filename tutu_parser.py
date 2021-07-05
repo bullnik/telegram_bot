@@ -43,7 +43,7 @@ class TutuParser(RoadParser, ABC):
         else:
             raise NotImplemented()
 
-    def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_avia_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(CHROME_EXE_PATH)
         driver.set_window_size(1500, 1000)
         driver.get("https://avia.tutu.ru/")
@@ -194,7 +194,7 @@ class TutuParser(RoadParser, ABC):
         driver.quit()
         return roads
 
-    def parse_train_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_train_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(CHROME_EXE_PATH)
         driver.set_window_size(1500, 1000)
         driver.get("https://www.tutu.ru/poezda/")
@@ -240,13 +240,18 @@ class TutuParser(RoadParser, ABC):
             return []
         search_button.click()
 
-        time.sleep(5)
-
-        try:
-            driver.find_element_by_xpath("//div[@id='root']")
-            page1 = True
-        except ex.NoSuchElementException:
-            page1 = False
+        wait = 0
+        while True:
+            if wait == 10:
+                page1 = False
+                break
+            time.sleep(1)
+            try:
+                driver.find_element_by_xpath("//div[@id='root']")
+                page1 = True
+                break
+            except ex.NoSuchElementException:
+                wait += 1
 
         if page1:
             roads = self.parse_train_tickets_page_1(driver, departure_town, arrival_town, min_departure_time)
@@ -257,7 +262,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_train_tickets_page_1(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -361,7 +366,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_train_tickets_page_2(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -483,7 +488,7 @@ class TutuParser(RoadParser, ABC):
         driver.quit()
         return roads
 
-    def parse_buses_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime):
+    def parse_buses_tickets(self, departure_town: str, arrival_town: str, min_departure_time: datetime) -> List[Road]:
         driver = webdriver.Chrome(CHROME_EXE_PATH)
         driver.set_window_size(1500, 1000)
         driver.get("https://bus.tutu.ru/")
@@ -537,12 +542,18 @@ class TutuParser(RoadParser, ABC):
             time.sleep(1)
             wait_time += 1
 
-        time.sleep(10)
-        try:
-            div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
-        except ex.NoSuchElementException:
-            print("Не удалось получить билеты")
-            return []
+        wait = 0
+        while True:
+            if wait == 10:
+                print("Не удалось получить билеты")
+                return []
+            time.sleep(1)
+            try:
+                div_element = driver.find_element_by_xpath("//div[@class='index__wrapper___gzfy3']")
+                break
+            except ex.NoSuchElementException:
+                print("Нехватило времени")
+                wait += 1
 
         try:
             div_element.find_element_by_xpath(".//tbody[@itemprop='offers']")
@@ -559,7 +570,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_buses_tickets_page_1(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
@@ -665,7 +676,7 @@ class TutuParser(RoadParser, ABC):
 
     @staticmethod
     def parse_buses_tickets_page_2(driver: webdriver, departure_town: str, arrival_town: str,
-                                   min_departure_time: datetime):
+                                   min_departure_time: datetime) -> List[Road]:
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
         tickets = []
