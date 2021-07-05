@@ -252,6 +252,7 @@ class TutuParser(RoadParser, ABC):
                 break
             except ex.NoSuchElementException:
                 page1 = False
+                wait += 1
 
         if page1:
             roads = self.parse_train_tickets_page_1(driver, departure_town, arrival_town, min_departure_time)
