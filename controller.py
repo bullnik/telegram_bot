@@ -45,7 +45,7 @@ class Controller:
     def get_answer_to_user_route_request(self, user_id: int) -> AnswerToUserRouteRequest:
         user_request = self.get_current_request(user_id)
         self.__db.insert_request(self.convert_to_finish_request(self.get_current_request(user_id)))
-        routes = self.__route_creator.create_routes(user_request.possible_places_lists,
+        routes = self.__route_creator.create_routes(user_request.possible_places_lists.copy(),
                                                     user_request.transport_types,
                                                     user_request.with_baggage)
         low_cost_route = self.__route_creator.get_low_cost_route(routes, user_request.with_baggage)
