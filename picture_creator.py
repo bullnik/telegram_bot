@@ -12,6 +12,14 @@ class PictureCreator:
     def create_graph(possible_places_lists: List[List[PlaceToVisit]],
                      routes: List[List[Road]],
                      low_cost_route: List[Road]) -> str:
+        # нужно создать картинку, на которой будет нарисовано:
+        # 1) города (possible_places_lists) с подписанными названиями
+        # 2) проложены между ними пути (routes - это список путей от начального
+        # города до конечного)
+        # 3) жирным выделен самый дешевый путь (low_cost_route) (font_weight=bold)
+        # хорошо, если цвета путей будут разными для разных типов транспорта
+        # картинка должна сохраняться в папке pictures в проекте, а метод
+        # возвращает путь к ней
 
         w = 170  # задаем расположение
         h = 100
@@ -69,6 +77,8 @@ class PictureCreator:
                          node_color='orange',
                          alpha=0.9,
                          arrows=True)
+
+        nx.draw_networkx_labels(graph, pos, labels={node: node for node in graph.nodes()})
         nx.draw_networkx_edge_labels(graph, pos,
                                      edge_labels=labels_edges,
                                      font_size=14,
@@ -109,4 +119,16 @@ class PictureCreator:
         # лист - количество пользователей по последние дни
         # stats[0] - сегодня, stats[1] - вчера и т.д.
 
-        return ''
+        stats_by_date = stats[::-1]
+        abscissa = list()
+
+        for i in range(len(stats)):
+            abscissa.append(i)
+
+        plt.figure(figsize=(12, 7))
+
+        plt.plot(abscissa, stats_by_date, 'o-r', alpha=0.7, lw=5, mec='b', mew=2, ms=10)
+        plt.grid(True)
+        plt.savefig('chart.jpg')
+
+        return 'chart.jpg'
