@@ -252,3 +252,21 @@ class Database:
             unique_users.append(a[0])
         connection.close()
         return unique_users
+
+    def get_usage_statistics(self, last_days: int) -> List[int]:
+        connection = sqlite3.connect('database.sqlite')
+        cursor = connection.cursor()
+        unique_users = []
+        for last_day in range(0, last_days + 1, 1):
+            min_date = str(datetime.now() - timedelta(days=last_day + 1))[0:19]
+            max_date = str(datetime.now() - timedelta(days=last_day))[0:19]
+            cursor.execute(f"""
+                            SELECT count(*)
+                            FROM UserRequests
+                            WHERE DateTime > \'{min_date}\'
+                                AND DateTime < \'{max_date}\'
+                            """)
+            a = cursor.fetchall()
+            unique_users.append(a[0])
+        connection.close()
+        return unique_users
