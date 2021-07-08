@@ -12,27 +12,76 @@ import plotly.graph_objects as go
 from road_parser import TransportType
 
 
+def test_data(possible_places_lists: List[List[PlaceToVisit]],
+              routes: List[List[Road]],
+              low_cost_route: List[Road]):
+    possible_places_lists.clear()
+    possible_places_lists.append([PlaceToVisit('Челябинск')])
+    possible_places_lists.append([PlaceToVisit('Екатеринбург'), PlaceToVisit('Тюмень'), PlaceToVisit('Омск')])
+    possible_places_lists.append([PlaceToVisit('Москва')])
+    possible_places_lists.append([PlaceToVisit('Лондон'), PlaceToVisit('Париж')])
+    possible_places_lists.append([PlaceToVisit('Рим')])
+    routes.clear()
+    routes.append([Road(TransportType.TRAIN, 'Челябинск', 'Екатеринбург', datetime.datetime.now(),
+                        datetime.datetime.now(), 1200, 0, ''),
+                   Road(TransportType.BUS, 'Челябинск', 'Екатеринбург', datetime.datetime.now(),
+                        datetime.datetime.now(), 600, 0, '')])
+    routes.append([Road(TransportType.TRAIN, 'Челябинск', 'Тюмень', datetime.datetime.now(),
+                        datetime.datetime.now(), 800, 0, '')])
+    routes.append([Road(TransportType.PLANE, 'Челябинск', 'Омск', datetime.datetime.now(), datetime.datetime.now(),
+                        2000, 500, '')])
+    routes.append([Road(TransportType.PLANE, 'Омск', 'Москва', datetime.datetime.now(), datetime.datetime.now(),
+                        1700, 500, '')])
+    routes.append([Road(TransportType.PLANE, 'Екатеринбург', 'Москва', datetime.datetime.now(),
+                        datetime.datetime.now(), 4000, 500, ''),
+                   Road(TransportType.PLANE, 'Екатеринбург', 'Москва', datetime.datetime.now(),
+                        datetime.datetime.now(), 4700, 700, '')])
+    routes.append([Road(TransportType.PLANE, 'Тюмень', 'Москва', datetime.datetime.now(), datetime.datetime.now(),
+                        6800, 400, '')])
+    routes.append([Road(TransportType.PLANE, 'Москва', 'Париж', datetime.datetime.now(), datetime.datetime.now(),
+                        10000, 0, '')])
+    routes.append([Road(TransportType.PLANE, 'Москва', 'Лондон', datetime.datetime.now(), datetime.datetime.now(),
+                        14000, 0, '')])
+    routes.append([Road(TransportType.PLANE, 'Лондон', 'Рим', datetime.datetime.now(), datetime.datetime.now(),
+                        32000, 0, '')])
+    routes.append([Road(TransportType.TRAIN, 'Париж', 'Рим', datetime.datetime.now(), datetime.datetime.now(),
+                        30000, 0, '')])
+
+    low_cost_route.clear()
+    low_cost_route.append(
+        Road(TransportType.PLANE, 'Челябинск', 'Омск', datetime.datetime.now(), datetime.datetime.now(),
+             2000, 500, ''))
+    low_cost_route.append(
+        Road(TransportType.PLANE, 'Омск', 'Москва', datetime.datetime.now(), datetime.datetime.now(),
+             1700, 500, ''))
+    low_cost_route.append(
+        Road(TransportType.PLANE, 'Москва', 'Париж', datetime.datetime.now(), datetime.datetime.now(),
+             10000, 0, ''))
+    low_cost_route.append(
+        Road(TransportType.TRAIN, 'Париж', 'Рим', datetime.datetime.now(), datetime.datetime.now(),
+             30000, 0, ''))
+
+
 class PictureCreator:
     @staticmethod
     def create_graph(possible_places_lists: List[List[PlaceToVisit]],
                      routes: List[List[Road]],
                      low_cost_route: List[Road]) -> str:
 
+        test_data(possible_places_lists, routes, low_cost_route)
+
         w = 170  # задаем расположение
         h = 100
         pos = {}
         for i in range(len(possible_places_lists)):
             for j in range(len(possible_places_lists[i])):
-                h0 = -((len(possible_places_lists[i])-1)*h)/2
-                pos[possible_places_lists[i][j].name] = (i*w, h0 + j*h)
+                h0 = -((len(possible_places_lists[i]) - 1) * h) / 2
+                pos[possible_places_lists[i][j].name] = (i * w, h0 + j * h)
 
         pair_list = []
         for i in range(len(possible_places_lists) - 1):
             for el1 in possible_places_lists[i]:
                 for el2 in possible_places_lists[i + 1]:
-                    city1 = None
-                    city2 = None
-                    total_cost = None
                     route_found = False
                     transport = ' '
                     for list_element in routes:
@@ -68,7 +117,7 @@ class PictureCreator:
 
         labels_edges = {}
         for pair in pair_list:
-            labels_edges[(pair[0], pair[1])] = str(pair[2])+' - '+pair[3]
+            labels_edges[(pair[0], pair[1])] = str(pair[2]) + ' - ' + pair[3]
 
         plt.figure()
 
@@ -77,7 +126,7 @@ class PictureCreator:
                          label='NetworkX',
                          width=3,
                          linewidths=5,
-                         node_size=7000,
+                         node_size=6000,
                          node_color='orange',
                          alpha=0.9,
                          arrows=True)
@@ -85,36 +134,41 @@ class PictureCreator:
         nx.draw_networkx_labels(graph, pos, labels={node: node for node in graph.nodes()})
         nx.draw_networkx_edge_labels(graph, pos,
                                      edge_labels=labels_edges,
-                                     font_size=14,
+                                     font_size=12,
                                      font_color='red',
-                                     label_pos=0.6)
+                                     label_pos=0.5)
 
         # Поверх основного графа рисует минимальную цену
         nx.draw_networkx(graph_low_cost, pos,
                          label='NetworkX',
-                         width=6,
+                         width=8,
                          linewidths=5,
-                         node_size=7000,
+                         node_size=6000,
                          node_color='orange',
                          edge_color='green',
                          alpha=0.9,
                          arrows=True)
         nx.draw_networkx_edge_labels(graph_low_cost, pos,
                                      edge_labels=labels_edges,
-                                     font_size=14,
+                                     font_size=12,
                                      font_color='blue',
-                                     label_pos=0.6)
+                                     label_pos=0.5)
 
-        manager = plt.get_current_fig_manager()
-        manager.window.showMaximized()
-        time.sleep(1)
+        # manager = plt.get_current_fig_manager()
+        # manager.window.showMaximized()
+        # time.sleep(3)
 
         name_fig = ['fig1.jpg', 'fig2.jpg', 'fig3.jpg', 'fig4.jpg']
 
         plt.axis('off')
         file_name = random.choice(name_fig)
         img_path = getcwd() + '\\pictures\\' + file_name
-        plt.savefig(img_path)
+        # plt.show()
+        fig = plt.gcf()
+        fig.set_size_inches((16, 9), forward=False)
+        fig.savefig(img_path, dpi=150)
+        # plt.savefig(img_path)
+        plt.close()
 
         return img_path
 
@@ -122,37 +176,8 @@ class PictureCreator:
     def create_map(possible_places_lists: List[List[PlaceToVisit]],
                    routes: List[List[Road]],
                    low_cost_route: List[Road]) -> str:
-        '''
-        possible_places_lists.clear()
-        possible_places_lists.append([PlaceToVisit('Челябинск')])
-        possible_places_lists.append([PlaceToVisit('Екатеринбург'), PlaceToVisit('Тюмень'), PlaceToVisit('Омск')])
-        possible_places_lists.append([PlaceToVisit('Москва')])
-        routes.clear()
-        routes.append([Road(TransportType.TRAIN, 'Челябинск', 'Екатеринбург', datetime.datetime.now(),
-                            datetime.datetime.now(), 1200, 0, ''),
-                       Road(TransportType.BUS, 'Челябинск', 'Екатеринбург', datetime.datetime.now(),
-                            datetime.datetime.now(), 600, 0, '')])
-        routes.append([Road(TransportType.TRAIN, 'Челябинск', 'Тюмень', datetime.datetime.now(),
-                            datetime.datetime.now(), 800, 0, '')])
-        routes.append([Road(TransportType.PLANE, 'Челябинск', 'Омск', datetime.datetime.now(), datetime.datetime.now(),
-                            2000, 500, '')])
-        routes.append([Road(TransportType.PLANE, 'Омск', 'Москва', datetime.datetime.now(), datetime.datetime.now(),
-                            1700, 500, '')])
-        routes.append([Road(TransportType.PLANE, 'Екатеринбург', 'Москва', datetime.datetime.now(),
-                            datetime.datetime.now(), 4000, 500, ''),
-                       Road(TransportType.PLANE, 'Екатеринбург', 'Москва', datetime.datetime.now(),
-                            datetime.datetime.now(), 4700, 700, '')])
-        routes.append([Road(TransportType.PLANE, 'Тюмень', 'Москва', datetime.datetime.now(), datetime.datetime.now(),
-                            6800, 400, '')])
 
-        low_cost_route.clear()
-        low_cost_route.append(
-            Road(TransportType.BUS, 'Челябинск', 'Екатеринбург', datetime.datetime.now(), datetime.datetime.now(), 600,
-                 0, ''))
-        low_cost_route.append(
-            Road(TransportType.PLANE, 'Екатеринбург', 'Москва', datetime.datetime.now(), datetime.datetime.now(), 4000,
-                 500, ''))
-        '''
+        test_data(possible_places_lists, routes, low_cost_route)
 
         geolocator = Nominatim(user_agent="bot")
         city_coords = {}
@@ -219,7 +244,7 @@ class PictureCreator:
             mapbox={
                 'center': {'lon': (max_long + min_long) / 2, 'lat': (max_lat + min_lat) / 2},
                 'style': "stamen-terrain",
-                'zoom': 3})
+                'zoom': 2})
 
         # fig.show()
 
@@ -246,6 +271,7 @@ class PictureCreator:
 
         plt.plot(abscissa, stats_by_date, 'o-r', alpha=0.7, lw=5, mec='b', mew=2, ms=10)
         plt.grid(True)
-        plt.savefig('chart.jpg')
+        img_path = getcwd() + '\\pictures\\chart.jpg'
+        plt.savefig(img_path)
 
-        return 'chart.jpg'
+        return img_path
