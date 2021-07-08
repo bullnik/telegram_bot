@@ -1,3 +1,4 @@
+import os
 from typing import List
 
 import telebot
@@ -10,7 +11,7 @@ from request import UserRequest
 from road import TransportType
 from unfinished_request import UnfinishedRequest
 
-token = "801332145:AAGpj1_4Pm4WtjdDi8QsRxdb0F3GaShGr_M"  # @chimberbembra_bot
+token = "1249001906:AAFWhgnhTLqKm5T-8bp8eyn15tIoN3bL0sU"  # @Wit15Bot_bot
 bot = telebot.TeleBot(token)
 start_message = "Используйте следующие команды:\n" \
                 "/help - помощь\n" \
@@ -152,8 +153,13 @@ def handle_callback(call):
         bot.send_message(call.message.chat.id, 'Подождите, идет поиск наилучшего маршрута...')
         answer = controller.get_answer_to_user_route_request(user_id)
         text = answer_to_string(answer)
-        bot.send_message(call.message.chat.id, text)
-        bot.send_message(call.message.chat.id, answer.pic)
+        if text != '':
+            bot.send_message(call.message.chat.id, text)
+            bot.send_photo(call.message.chat.id, photo=open(answer.pic, 'rb'), disable_notification=True)
+            bot.send_photo(call.message.chat.id, photo=open(answer.map, 'rb'), disable_notification=True)
+        else:
+            bot.send_message(call.message.chat.id, 'Не найден маршрут')
+        # bot.send_message(call.message.chat.id, answer.pic)
     if call.data == 'add_town' \
             or call.data == 'delete_town':
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,

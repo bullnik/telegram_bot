@@ -88,7 +88,8 @@ class YandexParser(RoadParser, ABC):
             try:
                 time.sleep(1)  # костыль, выпадающий список обновляется не моментально
                 departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
-                is_dropbox_update = True
+                if departure_dropbox_element.find_elements_by_xpath(".//*")[0].text == departure_town:
+                    is_dropbox_update = True
             except ex.NoSuchElementException:
                 print("Нехватило времени")
                 try_count += 1
@@ -115,7 +116,8 @@ class YandexParser(RoadParser, ABC):
             try:
                 time.sleep(1)  # опять костыль
                 arrival_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
-                is_dropbox_update = True
+                if arrival_dropbox_element.find_elements_by_xpath(".//*")[0].text == arrival_town:
+                    is_dropbox_update = True
             except ex.NoSuchElementException:
                 print("Нехватило времени")
                 try_count += 1
@@ -190,9 +192,11 @@ class YandexParser(RoadParser, ABC):
                                                    min_departure_time=min_departure_time,
                                                    transport_type='avia')
         if not search_result:
+            driver.quit()
             return []
 
-        time.sleep(3)
+        # time.sleep(3)
+        time.sleep(10)
 
         # Кнопка "Без пересадок"
         if SEARCH_DIRECT_TICKETS:
@@ -236,7 +240,7 @@ class YandexParser(RoadParser, ABC):
             try:
                 ticket_departure_time = tickets[j].find_element_by_xpath(
                     ".//span[@class='bX2B3 _3c05m JIKEi _2uao0']").text.split(':')
-            except ex.NoSuchElementException:
+            except:
                 print("Не удалось получить время выезда")
                 continue
             departure_time = str.format('{0}-{1}-{2} {3}:{4}:{5}',
@@ -336,6 +340,7 @@ class YandexParser(RoadParser, ABC):
                                                    min_departure_time=min_departure_time,
                                                    transport_type='trains')
         if not search_result:
+            driver.quit()
             return []
 
         time.sleep(3)
@@ -478,9 +483,11 @@ class YandexParser(RoadParser, ABC):
                                                    min_departure_time=min_departure_time,
                                                    transport_type='buses')
         if not search_result:
+            driver.quit()
             return []
 
-        time.sleep(3)
+        #time.sleep(3)
+        time.sleep(10)
 
         max_for_parsing = SETTINGS.get_max_count_parsed_roads()
         print("Всего будем парсить: " + str(max_for_parsing))
