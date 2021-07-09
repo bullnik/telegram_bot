@@ -47,7 +47,7 @@ class RouteCreator:
                                                              current_datetime: datetime,
                                                              progress: Progress):
         if len(possible_places_lists) < 2:
-            # progress.value += 1
+            progress.value += 1
             routes.append(current_route)
             return
 
@@ -78,7 +78,7 @@ class RouteCreator:
                         if place.name != road.arrival_town:
                             next_places.remove(place)
 
-                    self.recursive_traversal_places_and_adding_to_routes_list(places_copy,
+                    self.recursive_traversal_places_and_adding_to_routes_list(places_lists_copy,
                                                                               transport_types,
                                                                               with_baggage,
                                                                               routes,
