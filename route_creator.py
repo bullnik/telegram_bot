@@ -1,6 +1,8 @@
+import copy
 from datetime import datetime, timedelta
 from typing import List
 import database
+from Progress import Progress
 from road import Road, TransportType
 from place import PlaceToVisit
 from yandex_parser import YandexParser
@@ -13,7 +15,7 @@ class RouteCreator:
 
     def create_routes(self, possible_places_lists: List[List[PlaceToVisit]],
                       transport_types: List[TransportType],
-                      with_baggage: bool) -> List[List[Road]]:
+                      with_baggage: bool, progress: Progress) -> List[List[Road]]:
         if len(possible_places_lists) < 2:
             return []
 
@@ -28,7 +30,8 @@ class RouteCreator:
                                                                   with_baggage,
                                                                   routes,
                                                                   current_route,
-                                                                  current_datetime)
+                                                                  current_datetime,
+                                                                  progress)
 
         for route in routes:
             if len(route) < required_route_len:
@@ -41,8 +44,10 @@ class RouteCreator:
                                                              with_baggage: bool,
                                                              routes: List[List[Road]],
                                                              current_route: List[Road],
-                                                             current_datetime: datetime):
+                                                             current_datetime: datetime,
+                                                             progress: Progress):
         if len(possible_places_lists) < 2:
+            # progress.value += 1
             routes.append(current_route)
             return
 
@@ -64,17 +69,24 @@ class RouteCreator:
                     except FileNotFoundError:
                         continue
 
-                    route_copy = current_route.copy()
+                    route_copy = copy.deepcopy(current_route)
                     route_copy.append(road)
 
-                    self.recursive_traversal_places_and_adding_to_routes_list(possible_places_lists.copy(),
+                    places_lists_copy = copy.deepcopy(possible_places_lists)
+                    next_places = places_lists_copy[0]
+                    for place in next_places:
+                        if place.name != road.arrival_town:
+                            next_places.remove(place)
+
+                    self.recursive_traversal_places_and_adding_to_routes_list(places_copy,
                                                                               transport_types,
                                                                               with_baggage,
                                                                               routes,
                                                                               route_copy,
                                                                               current_datetime + timedelta(
                                                                                   days=stay_days_count)
-                                                                              + self.get_travel_time(road))
+                                                                              + self.get_travel_time(road),
+                                                                              progress)
 
     def get_low_cost_route(self, routes: List[List[Road]], with_baggage: bool) -> List[Road]:
         low_cost_route = []
