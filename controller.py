@@ -1,7 +1,9 @@
+import copy
 from typing import List
 
 import picture_creator
 import route_creator
+from Progress import Progress
 from settings import Settings
 from answer import AnswerToUserRouteRequest
 from database import Database
@@ -42,12 +44,12 @@ class Controller:
             return True
         return False
 
-    def get_answer_to_user_route_request(self, user_id: int) -> AnswerToUserRouteRequest:
+    def get_answer_to_user_route_request(self, user_id: int, progress: Progress) -> AnswerToUserRouteRequest:
         user_request = self.get_current_request(user_id)
         self.__db.insert_request(self.convert_to_finish_request(self.get_current_request(user_id)))
-        routes = self.__route_creator.create_routes(user_request.possible_places_lists.copy(),
+        routes = self.__route_creator.create_routes(copy.deepcopy(user_request.possible_places_lists),
                                                     user_request.transport_types,
-                                                    user_request.with_baggage)
+                                                    user_request.with_baggage, progress)
         low_cost_route = self.__route_creator.get_low_cost_route(routes, user_request.with_baggage)
         answer = AnswerToUserRouteRequest(user_request.possible_places_lists,
                                           routes, low_cost_route)
@@ -88,6 +90,9 @@ class Controller:
 
     def get_stats_picture(self, days_count: int) -> str:
         return picture_creator.PictureCreator.create_chart(self.__db.get_unique_users(days_count))
+
+    def get_usage_stats_picture(self, days_count: int) -> str:
+        return picture_creator.PictureCreator.create_chart(self.__db.get_usage_statistics(days_count))
 
     def get_history(self, user_id, records_count: int) -> List[UserRequest]:
         try:

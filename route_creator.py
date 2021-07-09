@@ -67,6 +67,7 @@ class RouteCreator:
                                              current_datetime + timedelta(days=stay_days_count),
                                              with_baggage)
                     except FileNotFoundError:
+                        progress.value += 1
                         continue
 
                     route_copy = copy.deepcopy(current_route)

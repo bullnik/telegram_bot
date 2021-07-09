@@ -1,17 +1,17 @@
-import os
+import asyncio
+import time
+from threading import Thread
 from typing import List
-
 import telebot
 from telebot import types
-
-import picture_creator
+from Progress import Progress
 from controller import Controller
 from answer import AnswerToUserRouteRequest
 from request import UserRequest
 from road import TransportType
 from unfinished_request import UnfinishedRequest
 
-token = "1249001906:AAFWhgnhTLqKm5T-8bp8eyn15tIoN3bL0sU"  # @Wit15Bot_bot
+token = "801332145:AAGpj1_4Pm4WtjdDi8QsRxdb0F3GaShGr_M"  # @chimberbembra_bot
 bot = telebot.TeleBot(token)
 start_message = "Используйте следующие команды:\n" \
                 "/help - помощь\n" \
@@ -94,14 +94,14 @@ def command_admin(message):
     typed_password = message.text[7:]
     if typed_password == str(controller.get_admin_password()):
         keyboard = types.InlineKeyboardMarkup(row_width=1)
-        keyboard.add(types.InlineKeyboardButton('Изменить максимальное количество дорог в базе данных',
-                                                callback_data='edit_max_stored_roads'),
-                     types.InlineKeyboardButton('Изменить максимальное количество получаемых дорог с сайта',
+        keyboard.add(types.InlineKeyboardButton('Изменить максимальное количество получаемых дорог с сайта',
                                                 callback_data='edit_max_parsed_roads'),
                      types.InlineKeyboardButton('Получить историю запросов пользователя',
                                                 callback_data='get_user_history'),
                      types.InlineKeyboardButton('Получить статистику уникальных пользователей',
-                                                callback_data='get_unique_users'))
+                                                callback_data='get_unique_users'),
+                     types.InlineKeyboardButton('Получить статистику использования бота',
+                                                callback_data='get_usage_stats'))
         bot.send_message(chat_id=message.from_user.id, text=get_settings(), reply_markup=keyboard)
     else:
         bot.reply_to(message, text='Пароль \'' + str(typed_password) + '\' неправильный. В доступе отказано')
@@ -110,6 +110,19 @@ def command_admin(message):
 @bot.message_handler(func=lambda call: True)
 def handle_random_message(message):
     bot.reply_to(message, start_message)
+
+
+def start_update_progress_bar_async(progress, chat_id, message_id):
+    i = 0
+    while progress.value != progress.limit and i < 2000:
+        text = progress.to_string()
+        try:
+            bot.edit_message_text(message_id=message_id, chat_id=chat_id, text=text)
+        except:
+            pass
+        time.sleep(1)
+        i += 1
+    bot.edit_message_text(message_id=message_id, chat_id=chat_id, text=progress.to_string())
 
 
 @bot.callback_query_handler(func=lambda call: True)
@@ -151,7 +164,19 @@ def handle_callback(call):
     if call.data == 'create_route':
         bot.delete_message(chat_id=call.message.chat.id, message_id=call.message.id)
         bot.send_message(call.message.chat.id, 'Подождите, идет поиск наилучшего маршрута...')
-        answer = controller.get_answer_to_user_route_request(user_id)
+        request = controller.get_current_request(user_id)
+        limit = 1
+        for places in request.possible_places_lists:
+            limit *= len(places)
+        limit *= len(request.transport_types)
+        progress = Progress(0, limit)
+        bot_progress_bar_message = bot.send_message(call.message.chat.id, progress.to_string())
+        chat_id = bot_progress_bar_message.chat.id
+        message_id = bot_progress_bar_message.id
+        th = Thread(target=start_update_progress_bar_async, args=(progress, chat_id, message_id), daemon=True)
+        th.start()
+        answer = controller.get_answer_to_user_route_request(user_id, progress)
+        progress.value = limit
         text = answer_to_string(answer)
         if text != '':
             bot.send_message(call.message.chat.id, text)
@@ -159,14 +184,13 @@ def handle_callback(call):
             bot.send_photo(call.message.chat.id, photo=open(answer.map, 'rb'), disable_notification=True)
         else:
             bot.send_message(call.message.chat.id, 'Не найден маршрут')
-        # bot.send_message(call.message.chat.id, answer.pic)
     if call.data == 'add_town' \
             or call.data == 'delete_town':
         bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                               text=request_to_string(request))
-    if call.data == 'edit_max_stored_roads':
-        message = bot.send_message(chat_id=call.message.chat.id, text="Введите новое значение")
-        bot.register_next_step_handler(message, set_max_saved_roads_count)
+    if call.data == 'get_usage_stats':
+        message = bot.send_message(chat_id=call.message.chat.id, text="Введите количество дней")
+        bot.register_next_step_handler(message, get_usage_stats)
     if call.data == 'edit_max_parsed_roads':
         message = bot.send_message(chat_id=call.message.chat.id, text="Введите новое значение")
         bot.register_next_step_handler(message, set_max_parsed_roads_count)
@@ -302,7 +326,6 @@ def requests_to_string(requests: List[UserRequest]) -> str:
 def get_settings() -> str:
     settings = controller.get_settings()
     output = ''
-    output += 'Максимальное количество дорог в базе данных: ' + str(settings[0]) + '\n'
     output += 'Максимальное количество получаемых дорог с сайта: ' + str(settings[1]) + '\n'
     return output
 
@@ -310,7 +333,8 @@ def get_settings() -> str:
 def get_statistics(message):
     try:
         count = int(message.text)
-        bot.send_photo(message.chat.id, controller.get_stats_picture(count))
+        pic = controller.get_stats_picture(count)
+        bot.send_photo(message.chat.id, photo=open(pic, 'rb'), disable_notification=True)
     except TypeError:
         bot.reply_to(message, 'Некорректные данные')
 
@@ -323,11 +347,13 @@ def get_history(message):
         bot.reply_to(message, text=history)
 
 
-def set_max_saved_roads_count(message):
-    if not controller.set_max_saved_roads_count(message.text):
-        bot.reply_to(message, text='Некорректные данные')
-    else:
-        bot.reply_to(message, text='Значение изменено')
+def get_usage_stats(message):
+    try:
+        count = int(message.text)
+        pic = controller.get_usage_stats_picture(count)
+        bot.send_photo(message.chat.id, photo=open(pic, 'rb'), disable_notification=True)
+    except TypeError:
+        bot.reply_to(message, 'Некорректные данные')
 
 
 def set_max_parsed_roads_count(message):
