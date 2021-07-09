@@ -88,11 +88,18 @@ class YandexParser(RoadParser, ABC):
             try:
                 time.sleep(1)  # костыль, выпадающий список обновляется не моментально
                 departure_dropbox_element = driver.find_element_by_xpath("//div[@class='_1mY6J _1QpxA']")
-                if departure_dropbox_element.find_elements_by_xpath(".//*")[0].text == departure_town:
+                elements = departure_dropbox_element.find_elements_by_xpath(".//*")
+                if elements[0].text == departure_town:
+                    is_dropbox_update = True
+                elif elements[1].text == departure_town:
+                    is_dropbox_update = True
+                elif elements[2].text == departure_town:
                     is_dropbox_update = True
             except ex.NoSuchElementException:
                 print("Нехватило времени")
                 try_count += 1
+            except IndexError:
+                print("")
         departure_dropbox_element.click()
 
         # Ищется поле с городом Куда (у прошлого элемента класс поменялся, поэтому это пашет)
