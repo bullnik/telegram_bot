@@ -82,7 +82,7 @@ class PictureCreator:
                      routes: List[List[Road]],
                      low_cost_route: List[Road]) -> str:
 
-        test_data(possible_places_lists, routes, low_cost_route)
+        # test_data(possible_places_lists, routes, low_cost_route)
 
         w = 170  # задаем расположение
         h = 100
@@ -200,7 +200,7 @@ class PictureCreator:
                    routes: List[List[Road]],
                    low_cost_route: List[Road]) -> str:
 
-        test_data(possible_places_lists, routes, low_cost_route)
+        # test_data(possible_places_lists, routes, low_cost_route)
 
         geolocator = Nominatim(user_agent="bot")
         city_coords = {}
