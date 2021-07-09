@@ -197,10 +197,9 @@ class PictureCreator:
 
     @staticmethod
     def create_map(possible_places_lists: List[List[PlaceToVisit]],
-                   routes: List[List[Road]],
                    low_cost_route: List[Road]) -> str:
 
-        # test_data(possible_places_lists, routes, low_cost_route)
+        # test_data(possible_places_lists, [], low_cost_route)
 
         geolocator = Nominatim(user_agent="bot")
         city_coords = {}
