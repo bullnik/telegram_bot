@@ -6,6 +6,7 @@ from Progress import Progress
 from road import Road, TransportType
 from place import PlaceToVisit
 from yandex_parser import YandexParser
+from tutu_parser import TutuParser
 
 
 class RouteCreator:
@@ -37,6 +38,7 @@ class RouteCreator:
             if len(route) < required_route_len:
                 routes.remove(route)
 
+
         return routes
 
     def recursive_traversal_places_and_adding_to_routes_list(self, possible_places_lists: List[List[PlaceToVisit]],
@@ -67,7 +69,6 @@ class RouteCreator:
                                              current_datetime + timedelta(days=stay_days_count),
                                              with_baggage)
                     except FileNotFoundError:
-                        progress.value += 1
                         continue
 
                     route_copy = copy.deepcopy(current_route)
@@ -90,16 +91,18 @@ class RouteCreator:
                                                                               progress)
 
     def get_low_cost_route(self, routes: List[List[Road]], with_baggage: bool) -> List[Road]:
-        low_cost_route = []
-        low_cost_route_cost = 9999999
-        for route in routes:
-            cost = 0
-            for road in route:
-                cost += self.get_total_price(road, with_baggage)
-            if cost < low_cost_route_cost:
-                low_cost_route = route
-                low_cost_route_cost = cost
-        return low_cost_route
+        list_low_costs = []
+        last_name = ''
+        for i in range(0, len(routes[0])):
+            lowest_cost = 999999
+            lowest_road = routes[0][0]
+            for route in routes:
+                if route[i].cost < lowest_cost or (last_name == route[i].departure_town or last_name == ''):
+                    lowest_cost = route[i].cost
+                    lowest_road = route[i]
+            last_name = lowest_road.arrival_town
+            list_low_costs.append(lowest_road)
+        return list_low_costs
 
     @staticmethod
     def get_travel_time(road: Road) -> timedelta:

@@ -11,12 +11,17 @@ class AnswerToUserRouteRequest:
                  low_cost_route: List[Road]):
         self.__pic = picture_creator.PictureCreator.create_graph(possible_places_lists, routes, low_cost_route)
         self.__map = picture_creator.PictureCreator.create_map(possible_places_lists, routes, low_cost_route)
+        self.__full_map = picture_creator.PictureCreator.create_full_map(possible_places_lists, routes, low_cost_route)
         self.__all_routes_count = len(routes)
         self.__low_cost_route = low_cost_route
 
     @property
     def map(self) -> str:
         return self.__map
+
+    @property
+    def full_map(self) -> str:
+        return self.__full_map
 
     @property
     def pic(self) -> str:

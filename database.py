@@ -74,10 +74,12 @@ class Database:
                 FROM Roads
                 WHERE DepartureTown = \'{dep}\'
                     AND ArrivalTown = \'{arr}\'
-                    AND DepartureTime >= \'{min_time}\'
-                    AND DepartureTime <= \'{max_time}\'
                     AND TransportType = \'{t_type}\'
             """)
+            # AND
+            # DepartureTime >= \'{min_time}\'
+            # AND
+            # DepartureTime <= \'{max_time}\'
             road_fetch = cursor.fetchall()
             if len(road_fetch) != 0:
                 roads.append(road_fetch[0])

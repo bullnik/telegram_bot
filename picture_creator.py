@@ -86,52 +86,36 @@ class PictureCreator:
 
         w = 170  # задаем расположение
         h = 100
-
         pos = {}
+        for i in range(len(possible_places_lists)):
+            for j in range(len(possible_places_lists[i])):
+                h0 = -((len(possible_places_lists[i]) - 1) * h) / 2
+                pos[possible_places_lists[i][j].name] = (i * w, h0 + j * h)
+
         pair_list = []
-        step = 0
         for i in range(len(possible_places_lists) - 1):
             for el1 in possible_places_lists[i]:
                 for el2 in possible_places_lists[i + 1]:
                     route_found = False
                     transport = ' '
-                    past_arrival_time = datetime.datetime.now()
                     for list_element in routes:
                         for road in list_element:
                             if el1.name == road.departure_town and el2.name == road.arrival_town:
-                                delta = abs(road.departure_time - past_arrival_time)
-                                if delta.days != 0:
-                                    wait_time = str(delta.days)+'д'
-                                else:
-                                    wait_time = str(delta.seconds//3600)+'ч'
-                                past_arrival_time = road.arrival_time
-                                city1 = road.departure_town+'\n'+wait_time
-                                city2 = road.arrival_town+'\n'+wait_time
-                                total_cost = road.cost + road.baggage_cost
-                                pos[city1] = ''
-
+                                city1 = road.departure_town
+                                city2 = road.arrival_town
+                                total_cost = road.cost # + road.baggage_cost
                                 if road.transport_type == TransportType.PLANE:
                                     transport = 'Plane'
                                 elif road.transport_type == TransportType.TRAIN:
                                     transport = 'Train'
                                 elif road.transport_type == TransportType.BUS:
                                     transport = 'Bus'
-
                                 route_found = True
                                 tuple_ = (city1, city2, total_cost, transport)
                                 pair_list.append(tuple_)
                                 break
                         if route_found:
                             break
-        pos[possible_places_lists[-1][0].name+'\n0ч'] = ''
-
-        for i in range(len(possible_places_lists)):
-            for j in range(len(possible_places_lists[i])):
-                for key in pos.keys():
-                    if key.find(possible_places_lists[i][j].name) != -1:
-                        h0 = -((len(possible_places_lists[i]) - 1) * h) / 2
-                        pos[key] = (i * w * 2, h0 + j * h)
-
         graph = nx.DiGraph()
         for pair in pair_list:
             graph.add_edge(pair[0], pair[1], weight=pair[2], title=str(pair[2]))
@@ -139,21 +123,14 @@ class PictureCreator:
         graph_low_cost = nx.DiGraph()
         for road in low_cost_route:
             total_cost = road.cost + road.baggage_cost
-            depar = road.departure_town
-            arriv = road.arrival_town
-            for key in pos.keys():
-                if key.find(depar) != -1:
-                    depar = key
-                if key.find(arriv) != -1:
-                    arriv = key
-            graph_low_cost.add_edge(depar,
-                                    arriv,
+            graph_low_cost.add_edge(road.departure_town,
+                                    road.arrival_town,
                                     weigth=total_cost,
                                     title=total_cost)
 
         labels_edges = {}
         for pair in pair_list:
-            labels_edges[(pair[0], pair[1])] = str(pair[2]) + 'р. - ' + pair[3]
+            labels_edges[(pair[0], pair[1])] = str(pair[2]) + ' - ' + pair[3]
 
         plt.figure()
 
@@ -162,16 +139,17 @@ class PictureCreator:
                          label='NetworkX',
                          width=3,
                          linewidths=5,
-                         node_size=5000,
+                         node_size=6000,
                          node_color='orange',
                          alpha=0.9,
                          arrows=True)
+
         # Поверх основного графа рисует минимальную цену
         nx.draw_networkx(graph_low_cost, pos,
                          label='NetworkX',
                          width=8,
                          linewidths=5,
-                         node_size=5000,
+                         node_size=6000,
                          node_color='orange',
                          edge_color='green',
                          alpha=0.9,
@@ -187,7 +165,6 @@ class PictureCreator:
         plt.axis('off')
         file_name = random.choice(name_fig)
         img_path = getcwd() + '\\pictures\\' + file_name
-        # plt.show()
         fig = plt.gcf()
         fig.set_size_inches((16, 9), forward=False)
         fig.savefig(img_path, dpi=150)
@@ -196,7 +173,8 @@ class PictureCreator:
         return img_path
 
     @staticmethod
-    def create_map(possible_places_lists: List[List[PlaceToVisit]],
+    def create_full_map(possible_places_lists: List[List[PlaceToVisit]],
+                   routes: List[List[Road]],
                    low_cost_route: List[Road]) -> str:
 
         # test_data(possible_places_lists, [], low_cost_route)
@@ -233,38 +211,85 @@ class PictureCreator:
         for i in range(len(possible_places_lists) - 1):
             for el1 in possible_places_lists[i]:
                 for el2 in possible_places_lists[i + 1]:
-                    for road in low_cost_route:
-                        if el1.name == road.departure_town and el2.name == road.arrival_town:
-                            transport_type = road.transport_type
-                            city_names = [el1.name, el2.name]
-                            city_from_coords = city_coords.get(el1.name)
-                            city_to_coords = city_coords.get(el2.name)
-                            middle_longs.append((city_from_coords[0] + city_to_coords[0])/2) # middle_long =
-                            middle_lats.append((city_from_coords[1] + city_to_coords[1])/2) # middle_lat =
-                            costs.append(str(road.cost + road.baggage_cost)+'р.') # cost =
+                    for list_element in routes:
+                        for road in list_element:
+                            if el1.name == road.departure_town and el2.name == road.arrival_town:
+                                transport_type = road.transport_type
+                                city_names = [el1.name, el2.name]
+                                city_from_coords = city_coords.get(el1.name)
+                                city_to_coords = city_coords.get(el2.name)
+                                middle_longs.append((city_from_coords[0] + city_to_coords[0]) / 2)
+                                middle_lats.append((city_from_coords[1] + city_to_coords[1]) / 2)
+                                costs.append(str(road.cost) + 'р.')  # + road.baggage_cost
 
-                            map_line_color = 'blue'
-                            if transport_type == TransportType.PLANE:
-                                map_line_color = 'red'
-                            elif transport_type == TransportType.TRAIN:
                                 map_line_color = 'blue'
-                            elif transport_type == TransportType.BUS:
-                                map_line_color = 'green'
-                            colors.append(map_line_color)
+                                if transport_type == TransportType.PLANE:
+                                    map_line_color = 'red'
+                                elif transport_type == TransportType.TRAIN:
+                                    map_line_color = 'blue'
+                                elif transport_type == TransportType.BUS:
+                                    map_line_color = 'green'
+                                colors.append(map_line_color)
 
-                            longitudes = [city_from_coords[0], city_to_coords[0]]
-                            latitudes = [city_from_coords[1], city_to_coords[1]]
-                            fig.add_trace(go.Scattermapbox(
-                                mode="markers+text+lines",
-                                lon=longitudes,
-                                lat=latitudes,
-                                text=city_names,
-                                textposition='top right',
-                                textfont=dict(size=15),
-                                line={'color': map_line_color},
-                                marker={'size': 14,
-                                        'color': 'orange'}))
-                            break
+                                longitudes = [city_from_coords[0], city_to_coords[0]]
+                                latitudes = [city_from_coords[1], city_to_coords[1]]
+                                fig.add_trace(go.Scattermapbox(
+                                    mode="markers+text+lines",
+                                    lon=longitudes,
+                                    lat=latitudes,
+                                    text=city_names,
+                                    textposition='top right',
+                                    textfont=dict(size=15),
+                                    line={'color': map_line_color},
+                                    marker={'size': 14,
+                                            'color': 'orange'}))
+                                break
+                    #
+                    #             city1 = road.departure_town
+                    #             city2 = road.arrival_town
+                    #             total_cost = road.cost # + road.baggage_cost
+                    #             if road.transport_type == TransportType.PLANE:
+                    #                 transport = 'Plane'
+                    #             elif road.transport_type == TransportType.TRAIN:
+                    #                 transport = 'Train'
+                    #             elif road.transport_type == TransportType.BUS:
+                    #                 transport = 'Bus'
+                    #             route_found = True
+                    #             break
+                    #     if route_found:
+                    #         break
+                    # for road in low_cost_route:
+                    #     if el1.name == road.departure_town and el2.name == road.arrival_town:
+                    #         transport_type = road.transport_type
+                    #         city_names = [el1.name, el2.name]
+                    #         city_from_coords = city_coords.get(el1.name)
+                    #         city_to_coords = city_coords.get(el2.name)
+                    #         middle_longs.append((city_from_coords[0] + city_to_coords[0])/2)
+                    #         middle_lats.append((city_from_coords[1] + city_to_coords[1])/2)
+                    #         costs.append(str(road.cost)+'р.') # + road.baggage_cost
+                    #
+                    #         map_line_color = 'blue'
+                    #         if transport_type == TransportType.PLANE:
+                    #             map_line_color = 'red'
+                    #         elif transport_type == TransportType.TRAIN:
+                    #             map_line_color = 'blue'
+                    #         elif transport_type == TransportType.BUS:
+                    #             map_line_color = 'green'
+                    #         colors.append(map_line_color)
+                    #
+                    #         longitudes = [city_from_coords[0], city_to_coords[0]]
+                    #         latitudes = [city_from_coords[1], city_to_coords[1]]
+                    #         fig.add_trace(go.Scattermapbox(
+                    #             mode="markers+text+lines",
+                    #             lon=longitudes,
+                    #             lat=latitudes,
+                    #             text=city_names,
+                    #             textposition='top right',
+                    #             textfont=dict(size=15),
+                    #             line={'color': map_line_color},
+                    #             marker={'size': 14,
+                    #                     'color': 'orange'}))
+                    #         break
 
         fig.add_trace(go.Scattermapbox(
             mode="markers+text",
@@ -311,7 +336,7 @@ class PictureCreator:
             margin={'l': 0, 't': 0, 'b': 0, 'r': 0},
             showlegend=False)
 
-        name_fig = ['map1', 'map2', 'map3', 'map4']
+        name_fig = ['full_map1', 'full_map2', 'full_map3', 'full_map4']
         file_name = random.choice(name_fig)
         html_path = getcwd() + '\\pictures\\' + file_name +'.html'
         plotly.offline.plot(fig, filename=html_path)
@@ -319,12 +344,148 @@ class PictureCreator:
         driver = webdriver.Chrome(executable_path="chromedriver.exe")
         driver.maximize_window()
         driver.get('file://'+html_path)
-        time.sleep(15)
+        time.sleep(90)
         img_path = getcwd() + '\\pictures\\' + file_name + '.png'
         driver.save_screenshot(img_path)
         driver.quit()
 
         return img_path
+
+    @staticmethod
+    def create_map(possible_places_lists: List[List[PlaceToVisit]],
+                   routes: List[List[Road]],
+                   low_cost_route: List[Road]) -> str:
+
+        # test_data(possible_places_lists, [], low_cost_route)
+
+        geolocator = Nominatim(user_agent="bot")
+        city_coords = {}
+
+        loc = geolocator.geocode(query=possible_places_lists[0][0].name, language='ru_RU')
+        min_long = loc.longitude
+        max_long = loc.longitude
+        min_lat = loc.latitude
+        max_lat = loc.latitude
+        for element in possible_places_lists:
+            for city in element:
+                loc = geolocator.geocode(query=city.name, language='ru_RU')
+                city_coords[city.name] = (loc.longitude, loc.latitude)
+                # находим минимум и максимум долготы
+                if min_long > loc.longitude:
+                    min_long = loc.longitude
+                elif max_long < loc.longitude:
+                    max_long = loc.longitude
+                    # находим минимум и максимум широты
+                if min_lat > loc.latitude:
+                    min_lat = loc.latitude
+                elif max_lat < loc.latitude:
+                    max_lat = loc.latitude
+
+        fig = go.Figure()
+
+        middle_longs = []
+        middle_lats = []
+        costs = []
+        colors = []
+        for i in range(len(possible_places_lists) - 1):
+            for el1 in possible_places_lists[i]:
+                for el2 in possible_places_lists[i + 1]:
+                    for road in low_cost_route:
+                        if el1.name == road.departure_town and el2.name == road.arrival_town:
+                            transport_type = road.transport_type
+                            city_names = [el1.name, el2.name]
+                            city_from_coords = city_coords.get(el1.name)
+                            city_to_coords = city_coords.get(el2.name)
+                            middle_longs.append((city_from_coords[0] + city_to_coords[0])/2)
+                            middle_lats.append((city_from_coords[1] + city_to_coords[1])/2)
+                            costs.append(str(road.cost)+'р.') # + road.baggage_cost
+
+                            map_line_color = 'blue'
+                            if transport_type == TransportType.PLANE:
+                                map_line_color = 'red'
+                            elif transport_type == TransportType.TRAIN:
+                                map_line_color = 'blue'
+                            elif transport_type == TransportType.BUS:
+                                map_line_color = 'green'
+                            colors.append(map_line_color)
+
+                            longitudes = [city_from_coords[0], city_to_coords[0]]
+                            latitudes = [city_from_coords[1], city_to_coords[1]]
+                            fig.add_trace(go.Scattermapbox(
+                                mode="markers+text+lines",
+                                lon=longitudes,
+                                lat=latitudes,
+                                text=city_names,
+                                textposition='top right',
+                                textfont=dict(size=15),
+                                line={'color': map_line_color},
+                                marker={'size': 14,
+                                        'color': 'orange'}))
+                            break
+
+        fig.add_trace(go.Scattermapbox(
+            mode="markers+text",
+            lon=middle_longs,
+            lat=middle_lats,
+            text=costs,
+            textposition='bottom right',
+            textfont=dict(size=30),
+            marker={'size': 5,
+                    'color': colors}))
+
+        center_long = (max_long + min_long) / 2
+        center_lat = (max_lat + min_lat) / 2
+
+        diff_long = abs(max_long - min_long)
+        diff_lat = abs(max_lat - min_lat)
+        map_zoom = 1
+        if (diff_long / 2) > diff_lat:
+            if 270 <= diff_long < 360:
+                map_zoom = 1.5
+            elif 180 <= diff_long < 270:
+                map_zoom = 2.1
+            elif 90 <= diff_long < 180:
+                map_zoom = 2.8
+            elif 0 <= diff_long < 90:
+                map_zoom = 3.5
+        else:
+            if 135 <= diff_lat < 180:
+                map_zoom = 1.5
+            elif 90 <= diff_lat < 135:
+                map_zoom = 1.9
+            elif 45 <= diff_lat < 90:
+                map_zoom = 2.3
+            elif 0 <= diff_lat < 45:
+                map_zoom = 2.7
+
+        token = 'pk.eyJ1IjoicXdlcnR5MTExcXdzenhjIiwiYSI6ImNrcXYxaWlsMjBhNG0yeG82dDZxaGg0ZmYifQ.sXb6HhGJc7fg98FBJfq18A'
+        fig.update_layout(
+            mapbox={
+                'accesstoken': token,
+                'center': {'lon': center_long, 'lat': center_lat},
+                'style': "outdoors",
+                'zoom': map_zoom},
+            margin={'l': 0, 't': 0, 'b': 0, 'r': 0},
+            showlegend=False)
+
+        name_fig = ['map1', 'map2', 'map3', 'map4']
+        file_name = random.choice(name_fig)
+        html_path = getcwd() + '\\pictures\\' + file_name + '.html'
+        plotly.offline.plot(fig, filename=html_path)
+
+        driver = webdriver.Chrome(executable_path="chromedriver.exe")
+        driver.maximize_window()
+        driver.get('file://' + html_path)
+        time.sleep(90)
+        img_path = getcwd() + '\\pictures\\' + file_name + '.png'
+        driver.save_screenshot(img_path)
+        driver.quit()
+
+        return img_path
+
+
+
+
 
     @staticmethod
     def create_chart(stats: List[int]) -> str:

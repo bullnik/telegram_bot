@@ -12,6 +12,7 @@ from road import TransportType
 from unfinished_request import UnfinishedRequest
 
 token = "801332145:AAGpj1_4Pm4WtjdDi8QsRxdb0F3GaShGr_M"  # @chimberbembra_bot
+#token = "1249001906:AAFWhgnhTLqKm5T-8bp8eyn15tIoN3bL0sU"  # @Wit15Bot_bot
 bot = telebot.TeleBot(token)
 start_message = "Используйте следующие команды:\n" \
                 "/help - помощь\n" \
@@ -167,7 +168,9 @@ def handle_callback(call):
         request = controller.get_current_request(user_id)
         limit = 1
         for places in request.possible_places_lists:
-            limit *= len(places)
+            for place in places:
+                days = place.max_stay_days - place.min_stay_days + 1
+                limit += days
         limit *= len(request.transport_types)
         progress = Progress(0, limit)
         bot_progress_bar_message = bot.send_message(call.message.chat.id, progress.to_string())
@@ -182,6 +185,7 @@ def handle_callback(call):
             bot.send_message(call.message.chat.id, text)
             bot.send_photo(call.message.chat.id, photo=open(answer.pic, 'rb'), disable_notification=True)
             bot.send_photo(call.message.chat.id, photo=open(answer.map, 'rb'), disable_notification=True)
+            bot.send_photo(call.message.chat.id, photo=open(answer.full_map, 'rb'), disable_notification=True)
         else:
             bot.send_message(call.message.chat.id, 'Не найден маршрут')
     if call.data == 'add_town' \

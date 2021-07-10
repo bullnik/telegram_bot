@@ -311,7 +311,7 @@ class TutuParser(RoadParser, ABC):
             try:
                 arrival_day = int(tickets[j].find_elements_by_xpath(
                     ".//span[@data-ti='stopover-date']")[1].text.split(' ')[0])
-            except ex.NoSuchElementException:
+            except:
                 print("Не удалось получить день приезда")
                 continue
             arrival_month = min_departure_time.month
